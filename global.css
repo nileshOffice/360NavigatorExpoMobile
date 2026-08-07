@@ -1,0 +1,172 @@
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/preflight.css" layer(base);
+@import "tailwindcss/utilities.css";
+
+@import "nativewind/theme";
+
+
+/* ============================================================
+   LIGHT THEME (DEFAULT)
+============================================================ */
+
+@theme {
+
+  /* Brand */
+  --color-primary: #2563EB;          /* blue-600 */
+  --color-primary-hover: #1D4ED8;    /* blue-700 */
+  --color-primary-light: #DBEAFE;    /* blue-100 */
+  --color-primary-soft: #EFF6FF;     /* blue-50 */
+
+  --color-secondary: #60A5FA;        /* blue-400 */
+
+  /* Background */
+  --color-background: #F8FAFC;       /* slate-50 */
+  --color-surface: #F1F5F9;          /* slate-100 */
+  --color-card: #FFFFFF;
+  --color-elevated: #FFFFFF;
+
+  /* Text */
+  --color-text-primary: #0F172A;     /* slate-900 */
+  --color-text-secondary: #334155;   /* slate-700 */
+  --color-text-tertiary: #64748B;    /* slate-500 */
+  --color-text-disabled: #94A3B8;    /* slate-400 */
+  --color-text-white: #FFFFFF;
+
+  /* Border */
+  --color-border-full: oklch(86.9% 0.022 252.894);           /* slate-200 */
+  --color-border-light: #F1F5F9;
+  --color-divider: #CBD5E1;
+
+  /* Icons */
+  --color-icon: #64748B;
+  --color-icon-active: #2563EB;
+
+  /* Status */
+  --color-success: #22C55E;
+  --color-success-bg: #DCFCE7;
+
+  --color-warning: #F59E0B;
+  --color-warning-bg: #FEF3C7;
+
+  --color-error: #EF4444;
+  --color-error-bg: #FEE2E2;
+
+  --color-info: #0EA5E9;
+  --color-info-bg: #E0F2FE;
+
+  /* Modules */
+  --module-pmo: #2563EB;
+  --module-pmo-bg: #DBEAFE;
+
+  --module-bpmo: #22C55E;
+  --module-bpmo-bg: #DCFCE7;
+
+  --module-gemba: #F59E0B;
+  --module-gemba-bg: #FEF3C7;
+
+  --module-asset: #A855F7;
+  --module-asset-bg: #F3E8FF;
+
+  --module-ramgps: #06B6D4;
+  --module-ramgps-bg: #CFFAFE;
+
+  /* Shadows */
+  --shadow-color: rgba(15, 23, 42, 0.08);
+
+  --shadow-sm: rgba(15, 23, 42, 0.04);
+  --shadow-md: rgba(15, 23, 42, 0.08);
+  --shadow-lg: rgba(15, 23, 42, 0.12);
+
+  /* Fonts */
+  --font-sans: sans-regular;
+  --font-sans-light: sans-light;
+  --font-sans-medium: sans-medium;
+  --font-sans-semibold: sans-semibold;
+  --font-sans-bold: sans-bold;
+  --font-sans-extrabold: sans-extrabold;
+}
+
+/* ============================================================
+   DARK THEME
+============================================================ */
+
+.dark {
+
+  /* Brand */
+  --color-primary: #3B82F6;          /* blue-500 */
+  --color-primary-hover: #2563EB;
+  --color-primary-light: #1D4ED8;
+  --color-primary-soft: #172554;
+
+  --color-secondary: #60A5FA;
+
+  /* Background */
+  --color-background: #020617;       /* slate-950 */
+  --color-surface: #0F172A;          /* slate-900 */
+  --color-card: #1E293B;             /* slate-800 */
+  --color-elevated: #293548;
+
+  /* Text */
+  --color-text-primary: #F8FAFC;
+  --color-text-secondary: #CBD5E1;
+  --color-text-tertiary: #94A3B8;
+  --color-text-disabled: #64748B;
+  --color-text-white: #FFFFFF;
+
+  /* Border */
+  --color-border: #334155;
+  --color-border-light: #475569;
+  --color-divider: #334155;
+
+  /* Icons */
+  --color-icon: #94A3B8;
+  --color-icon-active: #60A5FA;
+
+  /* Status */
+  --color-success: #22C55E;
+  --color-success-bg: rgba(34,197,94,.15);
+
+  --color-warning: #F59E0B;
+  --color-warning-bg: rgba(245,158,11,.15);
+
+  --color-error: #EF4444;
+  --color-error-bg: rgba(239,68,68,.15);
+
+  --color-info: #38BDF8;
+  --color-info-bg: rgba(56,189,248,.15);
+
+  /* Modules */
+  --module-pmo: #3B82F6;
+  --module-pmo-bg: rgba(59,130,246,.15);
+
+  --module-bpmo: #22C55E;
+  --module-bpmo-bg: rgba(34,197,94,.15);
+
+  --module-gemba: #F59E0B;
+  --module-gemba-bg: rgba(245,158,11,.15);
+
+  --module-asset: #A855F7;
+  --module-asset-bg: rgba(168,85,247,.15);
+
+  --module-ramgps: #06B6D4;
+  --module-ramgps-bg: rgba(6,182,212,.15);
+
+  /* Shadows */
+  --shadow-color: rgba(0,0,0,.45);
+
+  --shadow-sm: rgba(0,0,0,.25);
+  --shadow-md: rgba(0,0,0,.35);
+  --shadow-lg: rgba(0,0,0,.50);
+
+
+      /* Fonts */
+
+  --font-regular: sans-regular;
+  --font-medium: sans-medium;
+  --font-semibold: sans-semibold;
+  --font-bold: sans-bold;
+  
+}
+
+
+
