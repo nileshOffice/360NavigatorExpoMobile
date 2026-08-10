@@ -29,7 +29,7 @@ export default function AppIcon({family = 'Ionicons',name,size = 20, color = '#0
 
     const IconComponent = IconMap[family];
     return (
-        <IconComponent name={name as any} size={size}  className={cn("text-icon")}/>
+        <IconComponent name={name as any} size={size} color={color} className={cn("text-icon", className)}/>
     )
 }
 

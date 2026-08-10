@@ -1,9 +1,12 @@
 import "@/global.css";
+import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
 import { Stack } from "expo-router";
 import { useEffect, useState } from "react";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { Provider } from "react-redux";
+import { PersistGate } from "redux-persist/integration/react";
 import { useLazyLoadApplicationDataQuery } from "./auth/applicationApi";
-import { store } from "./lib/store/store";
+import { persistor, store } from "./lib/store/store";
 
 // Separate component so hooks run inside <Provider>
 function AppInitializer({ onReady }: { onReady: () => void }) {
@@ -30,15 +33,21 @@ export default function RootLayout() {
   const [initialized, setInitialized] = useState(false);
 
   return (
-    <Provider store={store}>
-      {!initialized && <AppInitializer onReady={() => setInitialized(true)} />}
-      {initialized && (
-        <Stack
-          screenOptions={{
-            headerShown: false,
-          }}
-        />
-      )}
-    </Provider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <Provider store={store}>
+        <PersistGate persistor={persistor}>
+          <BottomSheetModalProvider>
+            {!initialized && <AppInitializer onReady={() => setInitialized(true)} />}
+            {initialized && (
+              <Stack
+                screenOptions={{
+                  headerShown: false,
+                }}
+              />
+            )}
+          </BottomSheetModalProvider>
+        </PersistGate>
+      </Provider>
+    </GestureHandlerRootView>
   );
 }

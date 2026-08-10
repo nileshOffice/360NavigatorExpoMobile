@@ -7,6 +7,8 @@ import {
 
 export const authApi = baseApi.injectEndpoints({
 
+
+
     endpoints: (builder) => ({
 
         login: builder.mutation<LoginResponse, LoginRequest>({
@@ -29,6 +31,15 @@ export const authApi = baseApi.injectEndpoints({
 
         }),
 
+        startNewSessionForUser: builder.mutation<LoginResponse, { id1: string; id2: string }>({
+
+            query: (body) => ({
+                url: `/api/token/startNewSessionForUser`,
+                method: "POST",
+                body,
+            }),
+        }),
+
         profile: builder.query<any,void>({
 
             query: () => ({
@@ -46,4 +57,5 @@ export const {
     useLoginMutation,
     useLogoutMutation,
     useProfileQuery,
+    useStartNewSessionForUserMutation,
 } = authApi;

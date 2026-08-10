@@ -5,12 +5,13 @@ export interface LoginRequest {
   isFromLogIn?: boolean;
 }
 
-export interface LoginResponse {
- [key: string]: unknown;
-}
+export type User = Record<string, unknown> & {
+  isLoggedIn?: boolean | string | number;
+    isNavigationAllowed?: boolean;
 
-export interface User {
-  id: string;
-  userName: string;
-  name?: string;
-}
+};
+
+export type LoginResponse = Record<string, unknown> & {
+  isLoggedIn?: boolean | string | number;
+  currentUser?: User;
+};

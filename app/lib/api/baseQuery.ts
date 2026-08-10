@@ -37,8 +37,13 @@ export const baseQueryWithInterceptor:BaseQueryFn<string | FetchArgs,unknown,Fet
     const isBootstrapRequest =
       url.includes("loadApplicationData");
 
-    // Encrypt request body before rawBaseQuery JSON-serializes it
-    let modifiedArgs = args;
+    // Encrypted responses are ciphertext, so bypass JSON response parsing.
+    let modifiedArgs: string | FetchArgs =
+      !isBootstrapRequest && cryptoService.isConfigured()
+        ? typeof args === "string"
+          ? { url: args, responseHandler: "text" }
+          : { ...args, responseHandler: "text" }
+        : args;
     if (
       !isBootstrapRequest &&
       typeof args !== "string" &&
@@ -50,6 +55,7 @@ export const baseQueryWithInterceptor:BaseQueryFn<string | FetchArgs,unknown,Fet
       modifiedArgs = {
         ...args,
         body: encryptedBody,
+        responseHandler: "text",
         headers: {
           ...(args.headers as Record<string, string> | undefined),
           "Content-Type": "text/plain",
@@ -76,29 +82,13 @@ export const baseQueryWithInterceptor:BaseQueryFn<string | FetchArgs,unknown,Fet
       typeof result.data === "string"
     ) {
       try {
-
-        const decrypted =
-          cryptoService.decryptAPIResponseUsingAES256(
-            result.data
-          );
-
-        console.log(
-          "[baseQuery] decrypted response:",
-          decrypted
-        );
-
+        const decrypted =cryptoService.decryptAPIResponseUsingAES256(result.data);
         return {
           ...result,
           data: decrypted,
         };
 
       } catch (error) {
-
-        console.error(
-          "[baseQuery] Response decryption failed:",
-          error
-        );
-
         return result;
       }
     }
@@ -106,13 +96,8 @@ export const baseQueryWithInterceptor:BaseQueryFn<string | FetchArgs,unknown,Fet
     // ----------------------------------
     // 401
     // ----------------------------------
-
     if (result.error?.status === 401) {
-
-      console.log(
-        "[baseQuery] Access token expired"
-      );
-
+     
       // Refresh token will go here later.
     }
 
@@ -129,14 +114,9 @@ export const baseQueryWithInterceptor:BaseQueryFn<string | FetchArgs,unknown,Fet
       try {
 
         const decryptedError =
-          cryptoService.decryptAPIResponseUsingAES256(
-            result.error.data
-          );
+          cryptoService.decryptAPIResponseUsingAES256(result.error.data);
 
-        console.error(
-          "[baseQuery] decrypted error:",
-          decryptedError
-        );
+    
 
         return {
           ...result,

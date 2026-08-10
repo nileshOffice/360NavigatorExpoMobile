@@ -1,9 +1,9 @@
 import React, { forwardRef, useState } from "react";
 import {
-    ActivityIndicator,
-    Text,
-    TextInput,
-    View,
+  ActivityIndicator,
+  Text,
+  TextInput,
+  View,
 } from "react-native";
 
 import { cn } from "@/app/lib/cn";
@@ -70,7 +70,7 @@ const Input = forwardRef<TextInput, InputProps>(
             editable={!isDisabled}
             placeholderTextColor="#9CA3AF"
             className={cn(
-              "flex-1 text-md text-text-primary items-center ",
+              "flex-1 text-md text-text-primary items-center h-12 ",
               inputClassName
             )}
             onFocus={(e) => {

@@ -2,17 +2,19 @@ import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { User } from './auth.types';
 
 interface AuthState {
-  user: User | null;
+  currentUser: User | null;
   isAuthenticated: boolean;
-  hydrated: boolean;
+  isCompanySelectedByUser: boolean;
+  isSiteSelectedByUser: boolean;
+  visitFlag: boolean;
 }
 
-
-
 const initialState: AuthState = {
-  user: null,
+  currentUser: null,
   isAuthenticated: false,
-  hydrated: false,
+  isCompanySelectedByUser: false,
+  isSiteSelectedByUser: false,
+  visitFlag: false,
 };
 
 
@@ -21,24 +23,49 @@ const authSlice = createSlice({
   initialState,
 
   reducers: {
-    setCredentials: (state, action: PayloadAction<{user?: User}>) => {
-      state.user = action.payload.user || null;
+    setCredentials: (
+      state,
+      action: PayloadAction<{ currentUser?: User }>
+    ) => {
+      if (action.payload.currentUser) {
+        state.currentUser = {
+          ...state.currentUser,
+          ...action.payload.currentUser,
+        };
+      }
+
       state.isAuthenticated = true;
     },
 
-     setHydrated: (
-      state,
-      action: PayloadAction<boolean>
-    ) => {
-      state.hydrated = action.payload;
+
+
+    setCompanySelectedByUser: (state, action: PayloadAction<boolean>) => {
+      state.isCompanySelectedByUser = action.payload;
+    },
+
+    setSiteSelectedByUser: (state, action: PayloadAction<boolean>) => {
+      state.isSiteSelectedByUser = action.payload;
+    },
+
+    setVisitFlag: (state, action: PayloadAction<boolean>) => {
+      state.visitFlag = action.payload;
     },
 
     logout: (state) => {
-      state.user = null;
+      state.currentUser = null;
       state.isAuthenticated = false;
+      state.isCompanySelectedByUser = false;
+      state.isSiteSelectedByUser = false;
+      state.visitFlag = false;
     },
   }
 });
 
-export const { setCredentials, setHydrated, logout } = authSlice.actions;
+export const {
+  setCredentials,
+  setCompanySelectedByUser,
+  setSiteSelectedByUser,
+  setVisitFlag,
+  logout,
+} = authSlice.actions;
 export default authSlice.reducer;
