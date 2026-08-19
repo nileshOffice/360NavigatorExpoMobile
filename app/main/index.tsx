@@ -1,5 +1,5 @@
 import Home from "../modules/common/Home";
 
-export default function HomeRoute() {
+export default function MainRoute() {
   return <Home />;
 }

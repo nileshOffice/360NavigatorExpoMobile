@@ -1,5 +1,5 @@
 import { styled } from "nativewind";
-import { ScrollView } from "react-native";
+import { View } from "react-native";
 import { SafeAreaView as RNSafeAreaView } from 'react-native-safe-area-context';
 
 const SafeAreaView = styled(RNSafeAreaView);
@@ -17,20 +17,16 @@ export default function Screen({
 }: Props) {
   if (scroll) {
     return (
-      <SafeAreaView className={`flex-1 bg-background ${className}`}>
-        <ScrollView
-          className="flex-1"
-          contentContainerStyle={{ padding: 16 }}
-        >
-          {children}
-        </ScrollView>
-      </SafeAreaView>
+      
+    <View className={`flex-1  ${className}`}>
+         {children}
+    </View>
     );
   }
 
   return (
-    <SafeAreaView className={`flex-1  bg-background ${className}`}>
-      {children}
-    </SafeAreaView>
+    <View className={`flex-1  ${className}`}>
+        {children}
+    </View>
   );
 }

@@ -10,7 +10,9 @@ import { Text, View } from 'react-native';
 interface AppBottomSheetProps {
   visible: boolean;
   onClose: () => void;
-  size?: 'small' | 'medium' | 'large';
+  enableContentPanningGesture?: boolean;
+  enablePanDownToClose?: boolean;
+  size?: 'small' | 'medium' | 'large' | 'Xlarge';
   title?: string;
   description?: string;
   children?: React.ReactNode;
@@ -19,6 +21,8 @@ interface AppBottomSheetProps {
 export default function AppBottomSheet({
   visible,
   onClose,
+  enableContentPanningGesture = true,
+  enablePanDownToClose = true,
   size = 'medium',
   title,
   description,
@@ -27,7 +31,7 @@ export default function AppBottomSheet({
   const bottomSheetRef = useRef<BottomSheetModal>(null);
   const wasVisible = useRef(false);
   const snapPoints = useMemo(
-    () => ({ small: ['30%'], medium: ['50%'], large: ['75%'] })[size],
+    () => ({ small: ['30%'], medium: ['50%'], large: ['75%'], Xlarge: ['87%'] })[size],
     [size]
   );
   const renderBackdrop = useCallback(
@@ -68,11 +72,15 @@ export default function AppBottomSheet({
       ref={bottomSheetRef}
       snapPoints={snapPoints}
       enableDynamicSizing={false}
-      enablePanDownToClose
+      enablePanDownToClose={enablePanDownToClose}
+      enableContentPanningGesture={enableContentPanningGesture}
+      
       onDismiss={handleDismiss}
+      index={0}
+      
       backdropComponent={renderBackdrop}
     >
-      <BottomSheetView className="px-5 pb-8 pt-2">
+      <BottomSheetView className="flex-1 px-5 pb-8 pt-2 ">
         <View className="mb-5">
           {title && (
             <Text className="text-xl font-bold text-text-primary">

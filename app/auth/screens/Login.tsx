@@ -10,7 +10,7 @@ import { cryptoService } from '@/app/lib/services/crypto/cryptoService';
 import { useAppDispatch } from '@/app/lib/store/hooks';
 import CompanyLogo from '@/assets/images/360Nav_logo.svg';
 import LoginBottom from '@/assets/images/loginVectorBottom.svg';
-import { useRouter } from 'expo-router';
+import { type Href, useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { View } from 'react-native';
 import type { LoginResponse } from '../auth.types';
@@ -60,10 +60,8 @@ const Login = () => {
         accessCode,
         isFromLogIn: false,
       }).unwrap();
-      console.log("✅ Login response:", response);
       handleLoginSuccess(response);
     } catch (error) {
-      console.log("❌ Login error:", error);
       setErrorMessage(getLoginErrorMessage(error));
     }
   };
@@ -83,15 +81,17 @@ const Login = () => {
     console.log('Login successful:', response);
 
     if (isLoggedIn) {
-      // Save user in Redux
       dispatch(
         setCredentials({
-          currentUser,
+          currentUser: {
+            ...currentUser,
+            isNavigationAllowed: true,
+          },
         })
       );
-
-      // User already has an active session
+          // User already has an active session
       setIsLoginConfirmationVisible(true);
+      // router.replace('/main' as Href);
       return;
     }
 
@@ -105,7 +105,7 @@ const Login = () => {
         },
       })
     );
-    router.replace('/common/home');
+    router.replace('/main' as Href);
   };
 
   const startNewSessionLogin = async () => {
@@ -116,7 +116,6 @@ const Login = () => {
     setIsLoginConfirmationVisible(false);
     try {
       const response = await startNewSessionForUser(idDto).unwrap();
-      console.log( '✅ Start new session response:',response);
 
       const currentUser = response?.currentUser;
       if (!currentUser) {
@@ -132,11 +131,18 @@ const Login = () => {
             ...currentUser,
             isNavigationAllowed: true,
           },
+
+          // // Same behavior as Angular
+          // isCompanySelectedByUser: false,
+          // isSiteSelectedByUser: null,
+
+          // Same as:
+          // userData.companyCode == "RELWEB"
+          visitFlag: currentUser.companyCode === "RELWEB",
         })
       );
-      router.replace('/common/home');
+      router.replace('/main' as Href);
     } catch (error) {
-      console.log("❌ Start new session error:", error);
       setErrorMessage(getLoginErrorMessage(error));
     }
   };
@@ -148,7 +154,7 @@ const Login = () => {
 
 
   return (
-    <Screen className="flex-1 p-6">
+    <Screen className="flex-1">
       <View className="flex-1 gap-y-4" style={{ zIndex: 1 }}>
         <View className="items-center  max-w-2xl my-2" >
           <CompanyLogo width={230} height={56} />
@@ -206,7 +212,7 @@ const Login = () => {
 
       <View
         pointerEvents="none"
-        className="absolute bottom-0 -left-6 -right-6"
+        className="absolute -bottom-16 -left-6 -right-6"
         style={{ zIndex: 0 }}
       >
         <LoginBottom width="100%" height={96} preserveAspectRatio="xMidYMid slice" />
@@ -215,7 +221,6 @@ const Login = () => {
       <AppBottomSheet
         visible={isLoginConfirmationVisible}
         onClose={() => setIsLoginConfirmationVisible(false)}
-
         size="medium"
       >
         <View>

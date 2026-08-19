@@ -10,5 +10,7 @@ export const persistConfig: PersistConfig<any> = {
         'isCompanySelectedByUser',
         'isSiteSelectedByUser',
         'visitFlag',
+        'lastVisitedRoute',
+        'selectedSite',
     ],
 };

@@ -1,125 +1,183 @@
-import CryptoJS from "crypto-js";
+import * as CryptoJS from "crypto-js";
 
 class CryptoService {
   private encryptionKey: string = "";
   private encryptionIV: string = "";
 
+  // =========================================================
+  // CONFIGURATION
+  // =========================================================
+
   /**
-   * Set encryption key and IV received from loadApplicationData API
+   * Configure AES encryption key and IV.
+   *
+   * Angular:
+   * parts[8] = key
+   * parts[9] = iv
    */
-  setEncryptionConfig(key: string, iv: string): void {
+  configure(key: string, iv: string): void {
     this.encryptionKey = key;
     this.encryptionIV = iv;
   }
 
   /**
-   * Get CryptoJS AES key
-   *
-   * Angular:
-   * CryptoJS.enc.Base64.parse(this.encryptionKey())
+   * Clear encryption configuration.
    */
+  clear(): void {
+    this.encryptionKey = "";
+    this.encryptionIV = "";
+  }
+
+  /**
+   * Check whether encryption is ready.
+   */
+  isConfigured(): boolean {
+    return Boolean(
+      this.encryptionKey &&
+      this.encryptionIV
+    );
+  }
+
+  // =========================================================
+  // KEY / IV
+  // =========================================================
+
   private getKey(): CryptoJS.lib.WordArray {
-    return CryptoJS.enc.Base64.parse(this.encryptionKey);
+    if (!this.encryptionKey) {
+      throw new Error(
+        "[CryptoService] Encryption key is not configured."
+      );
+    }
+
+    return CryptoJS.enc.Base64.parse(
+      this.encryptionKey
+    );
   }
 
-  /**
-   * Get CryptoJS AES IV
-   */
   private getIV(): CryptoJS.lib.WordArray {
-    return CryptoJS.enc.Base64.parse(this.encryptionIV);
+    if (!this.encryptionIV) {
+      throw new Error(
+        "[CryptoService] Encryption IV is not configured."
+      );
+    }
+
+    return CryptoJS.enc.Base64.parse(
+      this.encryptionIV
+    );
   }
 
+  // =========================================================
+  // LOAD APPLICATION DATA
+  // =========================================================
+
   /**
-   * Encrypt API request body
-   *
    * Angular equivalent:
+   *
+   * const decodedResponse = atob(response);
+   * const parts = decodedResponse.split('|');
+   * const key = parts[8];
+   * const iv = parts[9];
+   *
+   * This method receives the raw loadApplicationData response.
+   */
+  configureFromApplicationData(
+    response: string
+  ): void {
+    if (!response) {
+      throw new Error(
+        "[CryptoService] Empty application data response."
+      );
+    }
+
+    try {
+      const rawValue = String(response).trim();
+      const unwrappedValue = rawValue
+        .replace(/^"|"$/g, "")
+        .replace(/^'|'$/g, "")
+        .replace(/\\"/g, '"');
+
+      const decodedResponse = this.decodeBase64ToText(
+        unwrappedValue
+      );
+
+      const parts = decodedResponse.split("|");
+
+      const key = parts[8];
+      const iv = parts[9];
+
+      if (!key || !iv) {
+        throw new Error(
+          "[CryptoService] Encryption key/IV not found."
+        );
+      }
+
+      this.configure(key, iv);
+
+      console.log(
+        "[CryptoService] Encryption configured successfully."
+      );
+
+    } catch (error) {
+      console.error(
+        "[CryptoService] Failed to configure encryption:",
+        error
+      );
+
+      throw error;
+    }
+  }
+
+  private decodeBase64ToText(value: string): string {
+    const cleanedValue = value.trim();
+
+    if (!cleanedValue) {
+      throw new Error(
+        "[CryptoService] Empty Base64 payload."
+      );
+    }
+
+    const normalizedValue = cleanedValue
+      .replace(/-/g, "+")
+      .replace(/_/g, "/");
+
+    const paddedValue =
+      normalizedValue.length % 4 === 0
+        ? normalizedValue
+        : normalizedValue + "=".repeat(4 - (normalizedValue.length % 4));
+
+    try {
+      return atob(paddedValue);
+    } catch {
+      const fallback = cleanedValue;
+      return atob(fallback);
+    }
+  }
+
+  // =========================================================
+  // API REQUEST ENCRYPTION
+  // =========================================================
+
+  /**
+   * Angular equivalent:
+   *
    * encryptPayloadsUsingAES256()
    */
-  encryptPayloadsUsingAES256(body: any): string {
-    const sanitizedBody = this.convertDates(body);
+  encryptPayloadsUsingAES256(
+    body: any
+  ): string {
 
-    const encrypted = CryptoJS.AES.encrypt(
-      JSON.stringify(sanitizedBody),
-      this.getKey(),
-      {
-        iv: this.getIV(),
-        mode: CryptoJS.mode.CBC,
-        padding: CryptoJS.pad.Pkcs7,
-      }
-    );
-
-    return encrypted.toString();
-  }
-
-  /**
-   * Decrypt API response
-   */
-  decryptAPIResponseUsingAES256(response: string): any {
-    try {
-      const decryptedText = CryptoJS.AES.decrypt(
-        this.unwrapEncryptedResponse(response),
-        this.getKey(),
-        {
-          iv: this.getIV(),
-          mode: CryptoJS.mode.CBC,
-          padding: CryptoJS.pad.Pkcs7,
-        }
-      ).toString(CryptoJS.enc.Utf8);
-
-      if (!decryptedText) {
-        return response;
-      }
-
-      try {
-        const parsedResponse = JSON.parse(decryptedText);
-
-        return Array.isArray(parsedResponse) &&
-          parsedResponse.every((item) => typeof item === "string")
-          ? parsedResponse
-          : this.convertKeysToCamelCase(parsedResponse);
-      } catch {
-        return decryptedText;
-      }
-    } catch {
-      return response;
+    if (!this.isConfigured()) {
+      throw new Error(
+        "[CryptoService] Encryption is not configured."
+      );
     }
-  }
 
-  /**
-   * Encrypt local storage data
-   *
-   * Angular equivalent:
-   * encryptData()
-   */
-  encryptData(text: any): string {
-    const encrypted = CryptoJS.AES.encrypt(
-      CryptoJS.enc.Utf8.parse(
-        typeof text === "string" ? text : JSON.stringify(text)
-      ),
-      this.getKey(),
-      {
-        iv: this.getIV(),
-        mode: CryptoJS.mode.CBC,
-        padding: CryptoJS.pad.Pkcs7,
-      }
-    );
+    const sanitizedBody =
+      this.convertDates(body);
 
-    return encrypted.toString();
-  }
-
-  /**
-   * Decrypt local storage data
-   *
-   * Angular equivalent:
-   * getDecryptedData()
-   */
-  getDecryptedData(encryptedData: string | null): object | null {
-    if (!encryptedData || !this.encryptionKey) {
-      return null;
-    }
-    try {
-      const bytes = CryptoJS.AES.decrypt(
-        encryptedData,
+    const encrypted =
+      CryptoJS.AES.encrypt(
+        JSON.stringify(sanitizedBody),
         this.getKey(),
         {
           iv: this.getIV(),
@@ -128,72 +186,293 @@ class CryptoService {
         }
       );
 
-      const decrypted = bytes.toString(CryptoJS.enc.Utf8);
+    return encrypted.toString();
+  }
+
+  // =========================================================
+  // API RESPONSE DECRYPTION
+  // =========================================================
+
+  /**
+   * Angular equivalent:
+   *
+   * decryptAPIResponseUsingAES256()
+   */
+  decryptAPIResponseUsingAES256(
+    response: string
+  ): any {
+
+    if (!this.isConfigured()) {
+      throw new Error(
+        "[CryptoService] Encryption is not configured."
+      );
+    }
+
+    if (
+      response === null ||
+      response === undefined ||
+      String(response).trim() === ""
+    ) {
+      return response;
+    }
+
+    const encryptedResponse =
+      this.unwrapEncryptedResponse(response);
+
+    if (!encryptedResponse || !encryptedResponse.trim()) {
+      return response;
+    }
+
+    const decryptedText =
+      CryptoJS.AES.decrypt(
+        encryptedResponse,
+        this.getKey(),
+        {
+          iv: this.getIV(),
+          mode: CryptoJS.mode.CBC,
+          padding: CryptoJS.pad.Pkcs7,
+        }
+      ).toString(CryptoJS.enc.Utf8);
+
+    if (!decryptedText) {
+      throw new Error(
+        "[CryptoService] Decryption returned empty response."
+      );
+    }
+
+    try {
+      const parsedResponse =
+        JSON.parse(decryptedText);
+
+      /**
+       * Angular behavior:
+       *
+       * If response is an array of strings,
+       * don't convert keys.
+       */
+      if (
+        Array.isArray(parsedResponse) &&
+        parsedResponse.every(
+          item => typeof item === "string"
+        )
+      ) {
+        return parsedResponse;
+      }
+
+      return this.convertKeysToCamelCase(
+        parsedResponse
+      );
+
+    } catch {
+      // Response wasn't JSON.
+      return decryptedText;
+    }
+  }
+
+  // =========================================================
+  // LOCAL STORAGE ENCRYPTION
+  // =========================================================
+
+  /**
+   * Angular equivalent:
+   *
+   * encryptData()
+   */
+  encryptData(text: any): string {
+
+    if (!this.isConfigured()) {
+      throw new Error(
+        "[CryptoService] Encryption is not configured."
+      );
+    }
+
+    const value =
+      typeof text === "string"
+        ? text
+        : JSON.stringify(text);
+
+    const encrypted =
+      CryptoJS.AES.encrypt(
+        CryptoJS.enc.Utf8.parse(value),
+        this.getKey(),
+        {
+          iv: this.getIV(),
+          mode: CryptoJS.mode.CBC,
+          padding: CryptoJS.pad.Pkcs7,
+        }
+      );
+
+    return encrypted.toString();
+  }
+
+  // =========================================================
+  // LOCAL STORAGE DECRYPTION
+  // =========================================================
+
+  /**
+   * Angular equivalent:
+   *
+   * getDecryptedData()
+   */
+  getDecryptedData(
+    encryptedData: string | null
+  ): object | null {
+
+    if (
+      !encryptedData ||
+      !this.isConfigured()
+    ) {
+      return null;
+    }
+
+    try {
+
+      const bytes =
+        CryptoJS.AES.decrypt(
+          encryptedData,
+          this.getKey(),
+          {
+            iv: this.getIV(),
+            mode: CryptoJS.mode.CBC,
+            padding: CryptoJS.pad.Pkcs7,
+          }
+        );
+
+      const decrypted =
+        bytes.toString(
+          CryptoJS.enc.Utf8
+        );
 
       if (!decrypted) {
         return null;
       }
 
       return JSON.parse(decrypted);
-    } catch {
+
+    } catch (error) {
+
+      console.error(
+        "[CryptoService] Local data decryption failed:",
+        error
+      );
+
       return null;
     }
   }
 
+  // =========================================================
+  // RESPONSE UNWRAPPER
+  // =========================================================
+
+  private unwrapEncryptedResponse(
+    response: string
+  ): string {
+
+    const trimmedResponse =
+      response.trim();
+
+    try {
+
+      const parsedResponse: unknown =
+        JSON.parse(trimmedResponse);
+
+      return typeof parsedResponse === "string"
+        ? parsedResponse
+        : trimmedResponse;
+
+    } catch {
+
+      return trimmedResponse;
+    }
+  }
+
+  // =========================================================
+  // CAMEL CASE CONVERSION
+  // =========================================================
+
   /**
-   * Convert API object keys to camelCase
+   * Angular equivalent:
    *
-   * Example:
-   *
-   * USER_NAME -> user_name
-   * UserName  -> userName
+   * convertKeysToCamelCase()
    */
-  convertKeysToCamelCase(data: any): any {
+  convertKeysToCamelCase(
+    data: any
+  ): any {
+
+    // -----------------------------------------
+    // ARRAY
+    // -----------------------------------------
+
     if (Array.isArray(data)) {
+
       if (data.length === 0) {
         return data;
       }
 
       const firstRow = data[0];
 
-      if (!firstRow || typeof firstRow !== "object") {
+      if (
+        !firstRow ||
+        typeof firstRow !== "object"
+      ) {
         return data;
       }
 
       const keyMap: Record<string, string> = {};
 
-      Object.keys(firstRow).forEach((key) => {
-        const newKey =
-          key.toUpperCase() === key
-            ? key.toLowerCase()
-            : key.charAt(0).toLowerCase() + key.slice(1);
+      Object.keys(firstRow).forEach(
+        key => {
 
-        keyMap[key] = newKey;
-      });
+          const newKey =
+            key.toUpperCase() === key
+              ? key.toLowerCase()
+              : key.charAt(0).toLowerCase() +
+                key.slice(1);
 
-      return data.map((obj) => {
-        if (!obj || typeof obj !== "object") {
+          keyMap[key] = newKey;
+        }
+      );
+
+      return data.map(obj => {
+
+        if (
+          !obj ||
+          typeof obj !== "object"
+        ) {
           return obj;
         }
 
         const newObj: any = {};
 
-        Object.keys(keyMap).forEach((oldKey) => {
-          newObj[keyMap[oldKey]] = obj[oldKey];
-        });
+        Object.keys(keyMap).forEach(
+          oldKey => {
+            newObj[keyMap[oldKey]] =
+              obj[oldKey];
+          }
+        );
 
         return newObj;
       });
     }
 
-    if (typeof data === "object" && data !== null) {
+    // -----------------------------------------
+    // OBJECT
+    // -----------------------------------------
+
+    if (
+      typeof data === "object" &&
+      data !== null
+    ) {
+
       const result: any = {};
 
-      Object.keys(data).forEach((key) => {
+      Object.keys(data).forEach(key => {
+
         const newKey =
           key.toUpperCase() === key
             ? key.toLowerCase()
-            : key.charAt(0).toLowerCase() + key.slice(1);
+            : key.charAt(0).toLowerCase() +
+              key.slice(1);
 
         result[newKey] = data[key];
       });
@@ -204,27 +483,23 @@ class CryptoService {
     return data;
   }
 
-  private unwrapEncryptedResponse(response: string): string {
-    const trimmedResponse = response.trim();
-
-    try {
-      const parsedResponse: unknown = JSON.parse(trimmedResponse);
-      return typeof parsedResponse === "string"
-        ? parsedResponse
-        : trimmedResponse;
-    } catch {
-      return trimmedResponse;
-    }
-  }
+  // =========================================================
+  // DATE CONVERSION
+  // =========================================================
 
   /**
-   * Recursively convert Date objects to YYYY-MM-DD
-   *
    * Angular equivalent:
+   *
    * convertDates()
    */
-  private convertDates(obj: any): any {
-    if (obj === null || obj === undefined) {
+  private convertDates(
+    obj: any
+  ): any {
+
+    if (
+      obj === null ||
+      obj === undefined
+    ) {
       return obj;
     }
 
@@ -233,14 +508,21 @@ class CryptoService {
     }
 
     if (Array.isArray(obj)) {
-      return obj.map((item) => this.convertDates(item));
+
+      return obj.map(
+        item => this.convertDates(item)
+      );
     }
 
     if (typeof obj === "object") {
+
       const result: any = {};
 
-      Object.keys(obj).forEach((key) => {
-        result[key] = this.convertDates(obj[key]);
+      Object.keys(obj).forEach(key => {
+
+        result[key] =
+          this.convertDates(obj[key]);
+
       });
 
       return result;
@@ -249,23 +531,30 @@ class CryptoService {
     return obj;
   }
 
-  /**
-   * Format Date as YYYY-MM-DD
-   */
-  private formatDate(date: Date): string {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const day = String(date.getDate()).padStart(2, "0");
+  // =========================================================
+  // DATE FORMAT
+  // =========================================================
+
+  private formatDate(
+    date: Date
+  ): string {
+
+    const year =
+      date.getFullYear();
+
+    const month =
+      String(
+        date.getMonth() + 1
+      ).padStart(2, "0");
+
+    const day =
+      String(
+        date.getDate()
+      ).padStart(2, "0");
 
     return `${year}-${month}-${day}`;
   }
-
-  /**
-   * Check whether encryption configuration is available
-   */
-  isConfigured(): boolean {
-    return Boolean(this.encryptionKey && this.encryptionIV);
-  }
 }
 
-export const cryptoService = new CryptoService();
+export const cryptoService =
+  new CryptoService();

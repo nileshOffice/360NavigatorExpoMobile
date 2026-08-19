@@ -2,6 +2,7 @@ import { api as baseApi } from "@/app/lib/api/baseApi";
 import {
     LoginRequest,
     LoginResponse,
+    UpdateUserSessionOnSiteChangeRequest
 } from "./auth.types";
 
 
@@ -22,13 +23,15 @@ export const authApi = baseApi.injectEndpoints({
         }),
         
 
-        logout: builder.mutation<void, void>({
-
-            query: () => ({
-                url: "/logout",
+       
+        logoutUser: builder.mutation<void,  {id21: any; id22: any;id51: any;}>({
+            query: (body) => ({
+                url: "/api/token/updateUsersAppUsageDuration",
                 method: "POST",
+                body: {
+                    dto: body,
+                },
             }),
-
         }),
 
         startNewSessionForUser: builder.mutation<LoginResponse, { id1: string; id2: string }>({
@@ -40,6 +43,15 @@ export const authApi = baseApi.injectEndpoints({
             }),
         }),
 
+        updateUserSessionOnSiteChange: builder.mutation<LoginResponse, UpdateUserSessionOnSiteChangeRequest>({
+            query: (idDto) => ({
+                url: "/api/user/updateUserSessionOnSiteChange",
+                method: "POST",
+                body: idDto,
+            }),
+        }),
+
+
         profile: builder.query<any,void>({
 
             query: () => ({
@@ -50,12 +62,15 @@ export const authApi = baseApi.injectEndpoints({
             providesTags: ["Auth"],
         }),
 
+
+
     }),
 });
 
 export const {
     useLoginMutation,
-    useLogoutMutation,
+    useLogoutUserMutation,
     useProfileQuery,
     useStartNewSessionForUserMutation,
+    useUpdateUserSessionOnSiteChangeMutation
 } = authApi;

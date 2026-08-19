@@ -3,7 +3,7 @@ import { AntDesign, Feather, FontAwesome6, Ionicons, MaterialCommunityIcons } fr
 import React from "react";
 
 
-type IconFamily = | 'Ionicons'| 'MaterialCommunityIcons'| 'Feather'| 'AntDesign' | 'FontAwesome6';
+type IconFamily = | 'Ionicons'| 'MaterialCommunityIcons'| 'Feather'| 'AntDesign' | 'FontAwesome6' ;
 
 interface AppIconProps {
     family?:IconFamily,

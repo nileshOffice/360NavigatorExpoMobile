@@ -1,36 +1,55 @@
+import { styled } from "nativewind";
+import { useState } from "react";
 import { View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import AppIcon from "../components/ui/AppIcon";
-import { AppText } from "../components/ui/Typography";
+import { SafeAreaView as RNSafeAreaView } from 'react-native-safe-area-context';
+import Header from "../components/app_components/Header";
+import Sidebar from "../components/ui/Sidebar";
+ 
+const SafeAreaView = styled(RNSafeAreaView);
 
 type Props = {
   children: React.ReactNode;
 };
 
 export default function AppLayout({ children }: Props) {
+  
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+
   return (
-    <SafeAreaView className="flex-1  px-6">
+    <>
       {/* Header */}
-      <View className="mt-10 mb-6">
-        <View className="flex-row items-center justify-between">
-          <View>
-            <View className="flex-row items-center">
-              <AppIcon family="Feather" name="user" size={20} color="#000000" />
-              <AppText className="ml-2 text-lg font-semibold text-text-primary">
-                User Profile
-              </AppText>
-            </View>
-          </View>
+     
+      <SafeAreaView className="flex-1  bg-background">
+      <Header   setSidebarOpen={setSidebarOpen}  />
+        {/*  */}
+        {/**/}
+
+        {/* Sidebar */}
+
+        <View className="flex-1 p-5">
+          {children}
         </View>
-      </View>
 
-      {/* Sidebar */}
+        {/* Bottom Navigation */}
+      </SafeAreaView>
 
-      <View className="flex-1">
-        {children}
-      </View>
-
-      {/* Bottom Navigation */}
-    </SafeAreaView>
+      <Sidebar
+        visible={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+        // onProfilePress={() => {
+        //   setSidebarOpen(false);
+        //   router.push('/common/profile');
+        // }}
+        // onSiteChangePress={() => {
+        //   setSidebarOpen(false);
+        //   router.push('/common/site-selection');
+        // }}
+        // onLogoutPress={() => {
+        //   setSidebarOpen(false);
+        //   handleLogout();
+        // }}
+  />
+    </>
   );
 }
