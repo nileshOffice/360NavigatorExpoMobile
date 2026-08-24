@@ -98,14 +98,6 @@ const defaultModuleColor: ModuleColor = {
   iconType: 'MaterialCommunityIcons',
 };
 
-// const defaultModuleColor: ModuleColor = {
-//   border: '#94A3B8',
-//   icon: '#64748B',
-//   iconBg: '#F1F5F9',
-//   iconName: 'layout-grid',
-//   iconType: 'lucide',
-// };
-
 
 const ModuleList = ({
   moduleList,

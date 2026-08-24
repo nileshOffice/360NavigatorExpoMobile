@@ -104,3 +104,49 @@ export const walkdownList = [
     badgeColor: '#F59E0B',
   },
 ];
+
+export interface SafetyGuideline {
+  id: number;
+  icon: string;
+  iconFamily:
+    | 'Ionicons'
+    | 'MaterialCommunityIcons'
+    | 'Feather'
+    | 'AntDesign'
+    | 'FontAwesome6';
+  text: string;
+}
+
+
+export const safetyGuidelines: SafetyGuideline[] = [
+  {
+    id: 1,
+    icon: 'clipboard-text-outline',
+    iconFamily: 'MaterialCommunityIcons',
+    text: "Always follow your site's safety protocols when using a mobile device. Please obey all safety signs, stickers, and tags.",
+  },
+  {
+    id: 2,
+    icon: 'walk',
+    iconFamily: 'Ionicons',
+    text: 'Do not use the application while walking or in motion.',
+  },
+  {
+    id: 3,
+    icon: 'pencil-outline',
+    iconFamily: 'MaterialCommunityIcons',
+    text: 'Always stop in a safe place to record information.',
+  },
+  {
+    id: 4,
+    icon: 'eye-outline',
+    iconFamily: 'Ionicons',
+    text: 'Always be alert of your workspace and surrounding areas while using the application.',
+  },
+  {
+    id: 5,
+    icon: 'hard-hat',
+    iconFamily: 'MaterialCommunityIcons',
+    text: 'Always wear the protective equipment that is intended for your task while using the App.',
+  },
+];

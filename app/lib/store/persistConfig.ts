@@ -12,5 +12,6 @@ export const persistConfig: PersistConfig<any> = {
         'visitFlag',
         'lastVisitedRoute',
         'selectedSite',
+        "safetyAcknowledged"
     ],
 };

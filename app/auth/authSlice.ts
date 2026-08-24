@@ -11,6 +11,8 @@ interface AuthState {
   selectedSite: Site | null;
   sessionExpired: boolean;
   siteSelectionOpen:boolean;
+  safetyAcknowledged: boolean;
+
 }
 
 const initialState: AuthState = {
@@ -23,6 +25,7 @@ const initialState: AuthState = {
   selectedSite: null,
   sessionExpired: false,
   siteSelectionOpen:false,
+  safetyAcknowledged:false,
 };
 
 const authSlice = createSlice({
@@ -93,6 +96,10 @@ const authSlice = createSlice({
       state.siteSelectionOpen = action.payload;
     },
 
+      setSafetyAcknowledged: (state, action) => {
+            state.safetyAcknowledged = action.payload;
+        },
+
    
 
     logout: (state) => {
@@ -116,6 +123,7 @@ export const {
   setLastVisitedRoute,
   setSelectedSite,
   setSiteSelectionOpen,
+  setSafetyAcknowledged,
   logout,
 } = authSlice.actions;
 export default authSlice.reducer;

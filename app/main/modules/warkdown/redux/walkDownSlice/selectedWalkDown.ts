@@ -17,6 +17,9 @@ interface AssetWalkDownState {
     selectedActivity:AssetWalkDownActivity | null;
 }
 
+
+
+
 const initialState:AssetWalkDownState = {
     selectedTab:'inProgress',
     selectedActivity:null,
@@ -57,6 +60,8 @@ const assetWalkDownSlice = createSlice ({
          state.selectedTab = 'inProgress',
          state.selectedActivity= null
        },
+
+      
     }
 })
 
