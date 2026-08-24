@@ -3,7 +3,7 @@ import AuthLayout from "../common/layouts/AuthLayout";
 
 export default function Layout() {
   return (
-    <AuthLayout>
+    <AuthLayout >
       <Slot />
     </AuthLayout>
   );

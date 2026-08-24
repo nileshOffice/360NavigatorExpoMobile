@@ -4,6 +4,7 @@ import { useGetModuleListByUserSidMutation, useGetSiteListByCompanyIdMutation, u
 import AppBottomSheet from '@/app/common/components/ui/bottom_sheet';
 import { AppText } from '@/app/common/components/ui/Typography';
 import Heading from '@/app/common/components/ui/Typography/Heading';
+import { APP_ROUTES } from '@/app/common/config/routes';
 import { Roles } from '@/app/common/constants/global_enum';
 import Screen from '@/app/common/layouts/Screen';
 import { getErrorStatus } from '@/app/common/utils/errorHandler';
@@ -15,6 +16,7 @@ import { View } from 'react-native';
 import { useSelector } from 'react-redux';
 import ModuleList from './ModuleList';
 import SiteList from './SiteList';
+
 
 const Home = () => {
 
@@ -239,7 +241,7 @@ const handleSiteSubmit = async (selectedSite: any) => {
 
 
   const onHandleSelectModule = () => {
-     
+    router.replace(APP_ROUTES.assetRegistry);
   }
 
 
@@ -247,9 +249,7 @@ const handleSiteSubmit = async (selectedSite: any) => {
 
 
  useEffect(() => {
-   
       getSiteList();
-    
   }, []);
   
 

@@ -20,14 +20,15 @@ export default function AppLayout({ children }: Props) {
     <>
       {/* Header */}
      
-      <SafeAreaView className="flex-1  bg-background">
-      <Header   setSidebarOpen={setSidebarOpen}  />
+      <SafeAreaView className="flex-1  bg-background" edges={['top', 'left', 'right']}>
+        <Header   setSidebarOpen={setSidebarOpen}  />
         {/*  */}
         {/**/}
+        
 
         {/* Sidebar */}
 
-        <View className="flex-1 p-5">
+        <View className="flex-1 py-3 px-5 ">
           {children}
         </View>
 
@@ -37,19 +38,7 @@ export default function AppLayout({ children }: Props) {
       <Sidebar
         visible={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
-        // onProfilePress={() => {
-        //   setSidebarOpen(false);
-        //   router.push('/common/profile');
-        // }}
-        // onSiteChangePress={() => {
-        //   setSidebarOpen(false);
-        //   router.push('/common/site-selection');
-        // }}
-        // onLogoutPress={() => {
-        //   setSidebarOpen(false);
-        //   handleLogout();
-        // }}
-  />
+      />
     </>
   );
 }

@@ -5,12 +5,13 @@ import Button from '@/app/common/components/ui/Button/Button';
 import Input from '@/app/common/components/ui/Input/Input';
 import { AppText } from '@/app/common/components/ui/Typography';
 import Heading from '@/app/common/components/ui/Typography/Heading';
+import { APP_ROUTES } from '@/app/common/config/routes';
 import Screen from '@/app/common/layouts/Screen';
 import { cryptoService } from '@/app/lib/services/crypto/cryptoService';
 import { useAppDispatch } from '@/app/lib/store/hooks';
 import CompanyLogo from '@/assets/images/360Nav_logo.svg';
 import LoginBottom from '@/assets/images/loginVectorBottom.svg';
-import { type Href, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { View } from 'react-native';
 import type { LoginResponse } from '../auth.types';
@@ -105,7 +106,7 @@ const Login = () => {
         },
       })
     );
-    router.replace('/main' as Href);
+   router.replace(APP_ROUTES.main);
   };
 
   const startNewSessionLogin = async () => {
@@ -141,7 +142,7 @@ const Login = () => {
           visitFlag: currentUser.companyCode === "RELWEB",
         })
       );
-      router.replace('/main' as Href);
+     router.replace(APP_ROUTES.main);
     } catch (error) {
       setErrorMessage(getLoginErrorMessage(error));
     }

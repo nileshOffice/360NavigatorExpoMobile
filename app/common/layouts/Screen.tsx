@@ -18,7 +18,7 @@ export default function Screen({
   if (scroll) {
     return (
       
-    <View className={`flex-1  ${className}`}>
+    <View className={`flex-1   ${className}`}>
          {children}
     </View>
     );

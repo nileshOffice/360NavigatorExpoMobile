@@ -1,35 +1,107 @@
 import CompanyLogo from '@/assets/images/360Nav_logo.svg';
-import React, { useState } from 'react';
+import { useRouter, useSegments } from 'expo-router';
+import React from 'react';
 import {
     Pressable,
     StyleSheet,
     Text,
     View
 } from 'react-native';
+import { HEADER_CONFIG } from '../../config/headerConfig';
 import AppIcon from '../ui/AppIcon';
-const Header = ({setSidebarOpen}:any) => {
 
-    const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
+type HeaderProps = {
+  setSidebarOpen: (value: boolean) => void;
+};
+
+const Header = ({ setSidebarOpen }: HeaderProps ) => {
+    const router = useRouter();
+    const segments = useSegments();
+    const routeName = segments[segments.length - 1];
+    const config = HEADER_CONFIG[routeName] ?? {
+    title: '',
+    showBack: true,
+    showMenu: false,
+    showLogo: false,
+    };
+
+
+    const handleBack = () => {
+        if (router.canGoBack()) {
+            router.back();
+        }
+        else {
+            router.replace('/main');
+        }
+    };
+
   
     return (
-        <View style={styles.header} className="">
-            <View className="h-16 flex-row justify-between items-center px-6">
+        <View style={styles.header}>
+            <View className="h-22 flex-row items-center px-6">
 
+                {/* LEFT SIDE */}
+                <View className="flex-1 flex-row items-center">
 
-                <Pressable
-                    accessibilityRole="button"
-                    accessibilityLabel="Toggle menu"
-                    className={`h-10 w-10 items-center justify-center`}
-                   onPress={() => setSidebarOpen(true)}
-                >
-                    <AppIcon family="Feather" name="menu" size={28} color="#000000" />
-                </Pressable>
+                    {/* HOME → MENU */}
+                    {config.showMenu && (
+                        <Pressable
+                            accessibilityRole="button"
+                            accessibilityLabel="Toggle menu"
+                            className="h-10 w-10 items-center justify-center"
+                            onPress={() => setSidebarOpen(true)}
+                        >
+                            <AppIcon
+                                family="Feather"
+                                name="menu"
+                                size={28}
+                                color="#000000"
+                            />
+                        </Pressable>
+                    )}
 
-                <View>
-                    <CompanyLogo width={120} height={56} />
+                    {/* OTHER SCREENS → BACK */}
+                    {config.showBack && (
+                        <Pressable
+                            accessibilityRole="button"
+                            accessibilityLabel="Go back"
+                            className="h-10 w-10 items-center justify-center"
+                            onPress={handleBack}
+                        >
+                            <AppIcon
+                                family="Feather"
+                                name="arrow-left"
+                                size={28}
+                                color="#000000"
+                            />
+                        </Pressable>
+                    )}
+
+                   
+
                 </View>
 
-               <View><Text>&nbsp;</Text></View>
+                {/* LOGO */}
+                {config.showLogo && (
+                    <View>
+                        <CompanyLogo
+                            width={120}
+                            height={56}
+                        />
+                    </View>
+                )}
+                 {/* SCREEN TITLE */}
+                    {config.title && (
+                        <Text className="ml-3 text-lg font-semibold text-gray-900">
+                            {config?.title}
+                        </Text>
+                    )}
+
+                {/* RIGHT SIDE */}
+                <View className="flex-1 items-end">
+                    {/* You can put profile icon here later */}
+                </View>
+
             </View>
         </View>
     )
@@ -47,8 +119,7 @@ export default Header
 
 const styles = StyleSheet.create({
     header: {
-        backgroundColor: '#F8FAFC',
-
+        //backgroundColor: '#F8FAFC',
         // ─────────────────────────────
         // Android Shadow
         // ─────────────────────────────

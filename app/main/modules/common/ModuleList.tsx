@@ -129,7 +129,6 @@ const ModuleList = ({
     );
   }
 
-  console.log(moduleList)
 
 
   /**

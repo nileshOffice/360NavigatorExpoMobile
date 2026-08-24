@@ -1,0 +1,313 @@
+import AppIcon from '@/app/common/components/ui/AppIcon';
+import { AppTabs, TabItem } from '@/app/common/components/ui/AppTab';
+import Card from '@/app/common/components/ui/Card/Card';
+import CardSkeleton from '@/app/common/components/ui/CardSkeleton';
+import { AppText } from '@/app/common/components/ui/Typography';
+import Screen from '@/app/common/layouts/Screen';
+import { useAppDispatch, useAppSelector } from '@/app/lib/store/hooks';
+import { RootState } from '@/app/lib/store/store';
+import { formatDateTime } from '@/app/lib/utils';
+import React, { useEffect, useMemo } from 'react';
+import { FlatList, StyleSheet, View } from 'react-native';
+import { IdDto, useGetAssetWalkDownActivityListQuery } from '../api/walkdownApi';
+import { setSelectedTab } from '../redux/walkDownSlice/selectedWalkDown';
+
+export interface WalkdownItem {
+  id: number;
+  title: string;
+  description: string;
+  assets: number;
+  date: string;
+
+  icon: string;
+  iconFamily:
+    | 'Ionicons'
+    | 'MaterialCommunityIcons'
+    | 'Feather'
+    | 'AntDesign'
+    | 'FontAwesome6';
+
+  iconBackground: string;
+  iconColor: string;
+
+  badgeBackground: string;
+  badgeColor: string;
+}
+
+
+type assetRegistryListProps = {
+  assetList: WalkdownItem[];
+  onHandleAssetListSelected: (selectedModule: WalkdownItem | null) => void;
+  isLoading: boolean;
+};
+
+const AssetRegistry = () => {
+
+const dispatch = useAppDispatch();
+
+const activeTab = useAppSelector(
+   state => state.assetWolkDown.selectedTab
+)
+
+const {currentUser} = useAppSelector((state) => state.auth);
+  const selectedSite = useAppSelector(
+    (state: RootState) => state.auth.selectedSite
+  );
+
+const idDto: IdDto = {
+  id21: Number(currentUser?.companyId ?? 0),
+  id22: selectedSite?.id ?? 0,
+  id23: Number(currentUser?.userId ?? 0),
+  id24: 99,
+  id: 'C',
+  id25: 0,
+  id26: 1,
+};
+
+  const canLoadActivityList =
+    !!currentUser?.companyId &&
+    !!currentUser?.userId &&
+    !!selectedSite?.id;
+
+  const {
+    data: activityList = [],
+    isLoading,
+    isFetching,
+    isError,
+    refetch,
+  } = useGetAssetWalkDownActivityListQuery(idDto, {
+    skip: !canLoadActivityList,
+  });
+
+  const inProgressActivityList = useMemo(
+  () =>
+    activityList.filter(
+      item => item.statusId === 0 || item.statusId === null,
+    ),
+  [activityList],
+);
+
+const completedActivityList = useMemo(
+  () =>
+    activityList.filter(
+      item => item.statusId === 1,
+    ),
+  [activityList],
+);
+ 
+
+
+
+
+const filteredActivityList = activeTab === 'inProgress' ? inProgressActivityList : completedActivityList;
+
+
+useEffect(() => {
+  if (
+    !isLoading &&
+    inProgressActivityList.length === 0 &&
+    completedActivityList.length > 0
+  ) {
+    dispatch(setSelectedTab('completed'));
+  }
+}, [
+  isLoading,
+  inProgressActivityList.length,
+  completedActivityList.length,
+  dispatch,
+]);
+
+const walkdownTabs: TabItem[] = [
+  {
+    key: 'inProgress',
+    label: 'In Progress',
+    count: inProgressActivityList.length,
+    icon: 'clock',
+    iconFamily: 'Feather',
+    iconSize: 20,
+    activeColor: '#2563EB',
+  },
+  
+  {
+    key: 'completed',
+    label: 'Completed',
+    count: completedActivityList.length,
+    icon: 'check-circle',
+    iconFamily: 'Feather',
+    iconSize: 20,
+    activeColor: '#2563EB',
+  },
+ 
+];
+
+
+// Registry wolkdownList 
+
+/**
+   * Loading state
+   */
+  if (isLoading) {
+    return (
+      <View className="flex-1">
+        {Array.from({ length: 10 }).map((_, index) => (
+          <CardSkeleton
+            key={`module-skeleton-${index}`}
+            className="mb-3"
+          />
+        ))}
+      </View>
+    );
+  }
+
+
+   /**
+     * Empty state
+     */
+    if (!activityList?.length) {
+      return (
+        <View className="flex-1 items-center justify-center px-6">
+          <View className="mb-4 h-16 w-16 items-center justify-center rounded-2xl bg-slate-100 dark:bg-slate-800">
+            <AppIcon
+              family="MaterialCommunityIcons"
+              name="view-grid-outline"
+              size={30}
+              className="text-slate-500!"
+            />
+            {/* <Image source={}/> */}
+          </View>
+  
+          <AppText variant="h6" className="text-center">
+           Activity  List Not available
+          </AppText>
+  
+          <AppText
+            variant="bodySmall"
+            className="mt-1 text-center text-text-tertiary"
+          >
+            There are no Activity available for this site.
+          </AppText>
+        </View>
+      );
+    }
+  
+
+     // 10. CURRENT TAB HAS NO DATA
+  if (!filteredActivityList.length) {
+    const isInProgress = activeTab === 'inProgress';
+
+    return (
+      <Screen>
+        <AppTabs
+          tabs={walkdownTabs}
+          activeTab={activeTab}
+          onChange={tab =>
+            dispatch(
+              setSelectedTab(
+                tab as 'inProgress' | 'completed',
+              ),
+            )
+          }
+        />
+
+        <View className="flex-1 items-center justify-center px-6">
+          <AppIcon
+            family="MaterialCommunityIcons"
+            name={
+              isInProgress
+                ? 'progress-clock'
+                : 'check-circle-outline'
+            }
+            size={30}
+            className="text-slate-500!"
+          />
+
+          <AppText
+            variant="h6"
+            className="mt-4 text-center">
+            {isInProgress
+              ? 'No In Progress Walkdowns'
+              : 'No Completed Walkdowns'}
+          </AppText>
+
+          <AppText
+            variant="bodySmall"
+            className="mt-1 text-center text-text-tertiary">
+            {isInProgress
+              ? 'There are no walkdowns currently in progress.'
+              : 'There are no completed walkdowns available.'}
+          </AppText>
+        </View>
+      </Screen>
+    );
+  }
+
+
+
+
+  return (
+    <>
+      <Screen  >
+   
+        <AppTabs
+          tabs={walkdownTabs}
+          activeTab={activeTab}
+           onChange={tab =>dispatch(setSelectedTab(tab as 'inProgress' | 'completed'))}
+
+        />
+  
+
+       <View className='flex-1 my-2'>
+        <FlatList
+          data={filteredActivityList}
+          keyExtractor={(item) => item?.id.toString()}
+          renderItem={({ item }) => (
+           <Card className='mb-2'>
+             <View className='flex-row justify-between gap-2 items-start'>
+              <View className='flex-row gap-4'>
+                <View
+                  className="h-16 w-16 items-center justify-center rounded-2xl bg-primary-soft"
+                >
+                  <AppIcon
+                    family="MaterialCommunityIcons"
+                    name="clipboard-check-outline"
+                    color="#2563EB"
+                    size={24}
+                  />
+                </View>
+                <View className='flex--1 gap-1'>
+                  <AppText variant={'h5'} >Walkdown ID:{item?.woId}</AppText>
+                  <AppText weight={"medium"} variant={'bodySmall'} className='text-text-tertiary!'>{item?.description}</AppText>
+                </View>
+              </View>
+              <View className='p-2 rounded-2xl bg-primary-soft'>
+                    <AppText className='text-primary!' variant={'caption'} weight='bold'>{item?.assetCount} Assets</AppText>
+              </View>
+             </View>
+             <View className='flex-row justify-between mt-3'>
+                <View className='flex-row items-center gap-2'>
+                  <AppIcon family='Ionicons'  size={12} name='calendar-outline' className='ml-3 text-primary/80!' /> 
+                  <AppText variant='label'>{formatDateTime(item.scheduleDate)}</AppText>
+                </View>
+                <View>
+                  <AppIcon
+                    family="Feather"
+                    name="chevron-right"
+                    size={20}
+                    color="#64748B"
+                  />
+                </View>
+             </View>
+             
+           </Card>
+          )}
+          showsVerticalScrollIndicator={true}
+        />
+        </View>
+      </Screen>
+    </>
+  )
+}
+
+export default AssetRegistry
+
+const styles = StyleSheet.create({})

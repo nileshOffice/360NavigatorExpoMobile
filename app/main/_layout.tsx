@@ -17,11 +17,7 @@ export default function Layout() {
   return (
     <AppLayout >
       <Slot />
-       {/* <Stack
-        screenOptions={{
-          headerShown: true,
-        }}
-      /> */}
+      
     </AppLayout>
   );
 }
