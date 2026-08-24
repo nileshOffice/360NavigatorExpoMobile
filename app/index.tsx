@@ -1,8 +1,14 @@
 import "@/global.css";
-import { Redirect } from "expo-router";
+import { Redirect, type Href } from "expo-router";
+import { useAppSelector } from "./lib/store/hooks";
 
 export default function App() {
-  return <Redirect href="/auth" />;
+  const { isAuthenticated, lastVisitedRoute } = useAppSelector((state) => state.auth);
+  const destination = lastVisitedRoute?.startsWith('/main')
+    ? lastVisitedRoute
+    : '/main';
+
+  return <Redirect href={(isAuthenticated ? destination : '/auth') as Href} />;
 }
 
 //       <Button variant={'primary'}   title={'Click Me'}>

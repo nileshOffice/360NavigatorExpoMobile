@@ -130,22 +130,10 @@ export default function Button({
       ) : (
         < >
           
-          {/* {leftIcon}
+          {
 
-          {title ? (
-            // <Text
-            //   className={cn(
-            //     "tracking-normal leading-none font-sans-semibold",
-            //     variants[variant].text,
-            //     textSizes[size]
-            //   )}
-            // >
-            //   {title}
-            // </Text>
-            {children}
-          ) : {children}}
-
-          {rightIcon} */
+        
+          
               <View className="flex flex-row items-center gap-1.5" >
                 {/* <Text className={cn("tracking-normal leading-none font-sans-semibold font-bold flex flex-row", variants[variant].text, textSizes[size])}>
                   {children}
@@ -153,7 +141,7 @@ export default function Button({
                 <View>{children}</View>
                 {
                  title
-                 && <View className=""><Text className={cn("tracking-normal leading-none font-sans-semibold font-bold ", variants[variant].text, textSizes[size])}>{title}</Text></View>}
+                 &&<View className=""><Text className={cn("tracking-normal leading-none font-sans-semibold font-bold ", variants[variant].text, textSizes[size])}>{title}</Text></View>}
                 
               </View>
              

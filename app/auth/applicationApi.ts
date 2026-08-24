@@ -8,41 +8,54 @@ export const applicationApi = createApi({
   baseQuery: baseQueryWithInterceptor,
 
   endpoints: (builder) => ({
-    loadApplicationData: builder.query<void, void>({
+    loadApplicationData: builder.query<string, void>({
       query: () => ({
         url: "/api/token/loadApplicationData",
         method: "GET",
         responseHandler: "text",
       }),
 
-      transformResponse: (response: string) => {
-        console.log("[applicationApi] raw response:", response);
 
-        // fetchBaseQuery may JSON-encode plain text responses — strip surrounding quotes
-        const raw = response.trim().replace(/^"|"$/g, "");
+     
 
-        let decodedResponse: string;
+      async onQueryStarted(_, { queryFulfilled }) {
         try {
-          decodedResponse = atob(raw);
-        } catch {
-          return;
+          const { data } = await queryFulfilled;
+
+          console.log(
+            "[loadApplicationData] Response received"
+          );
+
+          cryptoService.configureFromApplicationData(data);
+
+          console.log(
+            "[loadApplicationData] Crypto configured:",
+            cryptoService.isConfigured()
+          );
+
+        } catch (error) {
+          console.error(
+            "[loadApplicationData] Failed:",
+            error
+          );
         }
-
-        const parts = decodedResponse.split("|");
-        const key = parts[8];
-        const iv = parts[9];
-
-        if (!key || !iv) {
-          return;
-        }
-
-        cryptoService.setEncryptionConfig(key, iv);
-        console.log("[applicationApi] encryption config set successfully");
       },
     }),
+
+    
+    pingServer: builder.mutation<unknown,{ id21: string | number; id22: number;id23: number;}>({
+      query: (body) => ({
+        url: '/api/user/pingServer',
+        method: 'POST',
+        body,
+      }),
+    }),
+
+
   }),
 });
 
 export const {
   useLazyLoadApplicationDataQuery,
+  usePingServerMutation
 } = applicationApi;

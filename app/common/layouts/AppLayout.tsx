@@ -1,22 +1,44 @@
+import { styled } from "nativewind";
+import { useState } from "react";
 import { View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView as RNSafeAreaView } from 'react-native-safe-area-context';
+import Header from "../components/app_components/Header";
+import Sidebar from "../components/ui/Sidebar";
+ 
+const SafeAreaView = styled(RNSafeAreaView);
 
 type Props = {
   children: React.ReactNode;
 };
 
 export default function AppLayout({ children }: Props) {
+  
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+
   return (
-    <SafeAreaView className="flex-1  px-6">
+    <>
       {/* Header */}
+     
+      <SafeAreaView className="flex-1  bg-background" edges={['top', 'left', 'right']}>
+        <Header   setSidebarOpen={setSidebarOpen}  />
+        {/*  */}
+        {/**/}
+        
 
-      {/* Sidebar */}
+        {/* Sidebar */}
 
-      <View className="flex-1">
-        {children}
-      </View>
+        <View className="flex-1 py-3 px-5 ">
+          {children}
+        </View>
 
-      {/* Bottom Navigation */}
-    </SafeAreaView>
+        {/* Bottom Navigation */}
+      </SafeAreaView>
+
+      <Sidebar
+        visible={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+      />
+    </>
   );
 }
