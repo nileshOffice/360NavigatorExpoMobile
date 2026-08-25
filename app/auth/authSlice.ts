@@ -110,6 +110,7 @@ const authSlice = createSlice({
       state.visitFlag = false;
       state.lastVisitedRoute = null;
       state.selectedSite = null;
+      state.safetyAcknowledged = false;
     },
   }
 });

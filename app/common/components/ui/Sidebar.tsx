@@ -3,6 +3,7 @@ import { logout, setSiteSelectionOpen } from '@/app/auth/authSlice';
 import AppIcon from '@/app/common/components/ui/AppIcon';
 import { AppText } from '@/app/common/components/ui/Typography';
 import { useAppDispatch, useAppSelector } from '@/app/lib/store/hooks';
+import { persistor } from '@/app/lib/store/store';
 import { useRouter } from 'expo-router';
 import { styled } from 'nativewind';
 import React, { useEffect } from 'react';
@@ -53,24 +54,37 @@ const Sidebar = ({
     };
 
     const handleLogout = async (isFullyLogout: boolean) => {
+    try {
         if (!currentUser) {
-            router.replace("/auth");
-            return;
+        await persistor.purge();
+        router.replace("/auth");
+        return;
         }
 
         const idDto = {
-            id21: Number(currentUser.sessionId),
-            id22: Number(currentUser.userId),
-            id51: isFullyLogout,
+        id21: Number(currentUser.sessionId),
+        id22: Number(currentUser.userId),
+        id51: isFullyLogout,
         };
 
-        try {
-            // await logoutUser(idDto).unwrap();
-            dispatch(logout());
-            router.replace("/auth");
-        } catch (error) {
-            console.error("Logout API error:", error);
+        // 1. Call logout API
+        await logoutUser(idDto).unwrap();
+
+        // 2. Clear Redux state
+        dispatch(logout());
+
+        // 3. If total logout, clear persisted Redux data
+        if (isFullyLogout) {
+        await persistor.flush();
+        await persistor.purge();
         }
+
+        // 4. Go to login
+        router.replace("/auth");
+
+    } catch (error) {
+        console.error("Logout API error:", error);
+    }
     };
 
     //------------ state Defind Here ----------------------
