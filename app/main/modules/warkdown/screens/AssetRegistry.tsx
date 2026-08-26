@@ -6,14 +6,17 @@ import Button from '@/app/common/components/ui/Button/Button';
 import Card from '@/app/common/components/ui/Card/Card';
 import CardSkeleton from '@/app/common/components/ui/CardSkeleton';
 import { AppText, Heading } from '@/app/common/components/ui/Typography';
+import { APP_ROUTES } from '@/app/common/config/routes';
 import Screen from '@/app/common/layouts/Screen';
 import { safetyGuidelines } from '@/app/data';
 import { useAppDispatch, useAppSelector } from '@/app/lib/store/hooks';
 import { RootState } from '@/app/lib/store/store';
 import { formatDateTime } from '@/app/lib/utils';
+import { router } from 'expo-router';
 import React, { useEffect, useMemo } from 'react';
 import { FlatList, StyleSheet, View } from 'react-native';
-import { IdDto, useGetAssetWalkDownActivityListQuery } from '../api/walkdownApi';
+import { useGetAssetWalkDownActivityListQuery } from '../api/walkdownApi';
+import { IdDto } from '../api/walkdownApi.types';
 import { setSelectedTab } from '../redux/walkDownSlice/selectedWalkDown';
 
 
@@ -269,7 +272,16 @@ const AssetRegistry = () => {
             data={filteredActivityList}
             keyExtractor={(item) => item?.id.toString()}
             renderItem={({ item }) => (
-              <Card className='mb-2'>
+              <Card className='mb-2' pressable={true}
+                onPress={() =>
+                  router.replace({
+                     pathname: APP_ROUTES.assetAssignment as any,
+                    params: {
+                      selectedActivityData: JSON.stringify(item),
+                    },
+                  })
+                }
+             >
                 <View className='flex-row justify-between gap-2 items-start'>
                   <View className='flex-row gap-4'>
                     <View

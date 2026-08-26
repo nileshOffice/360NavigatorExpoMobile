@@ -25,7 +25,6 @@ export const authApi = baseApi.injectEndpoints({
 
        
         logoutUser: builder.mutation<void,  {id21: any; id22: any;id51: any;}>({
-
             query: (body) => ({
                 url: "/api/token/updateUsersAppUsageDuration",
                 method: "POST",

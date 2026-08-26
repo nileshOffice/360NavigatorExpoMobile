@@ -150,3 +150,28 @@ export const safetyGuidelines: SafetyGuideline[] = [
     text: 'Always wear the protective equipment that is intended for your task while using the App.',
   },
 ];
+
+
+export const assignmentSectionHeader = [
+  {
+    key: 'assigned',
+    title: 'ASSIGNED',
+    count: 3,
+    color: '#94A3B8',
+   
+  },
+  {
+    key: 'added',
+    title: 'ADDED',
+    count: 2,
+    color: '#7C3AED',
+  },
+  {
+    key: 'completed',
+    title: 'COMPLETED',
+    count: 3,
+    color: '#16A34A',
+ 
+  },
+];
+
