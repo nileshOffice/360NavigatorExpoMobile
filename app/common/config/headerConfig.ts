@@ -19,5 +19,11 @@ export const HEADER_CONFIG: Record<string, HeaderConfig> = {
         showMenu: false,
         showLogo: false,
     },
+    MyAssignment: {
+        title: 'My Assignments',
+        showBack: true,
+        showMenu: false,
+        showLogo: false,
+    },
 
 };

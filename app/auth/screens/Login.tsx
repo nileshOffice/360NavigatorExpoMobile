@@ -213,7 +213,7 @@ const Login = () => {
 
       <View
         pointerEvents="none"
-        className="absolute -bottom-16 -left-6 -right-6"
+        className="absolute -bottom-7 -left-6 -right-6"
         style={{ zIndex: 0 }}
       >
         <LoginBottom width="100%" height={96} preserveAspectRatio="xMidYMid slice" />

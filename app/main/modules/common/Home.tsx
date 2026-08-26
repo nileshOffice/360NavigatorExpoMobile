@@ -7,6 +7,7 @@ import Heading from '@/app/common/components/ui/Typography/Heading';
 import { APP_ROUTES } from '@/app/common/config/routes';
 import { Roles } from '@/app/common/constants/global_enum';
 import Screen from '@/app/common/layouts/Screen';
+import { setModuleList } from '@/app/common/redux/homeSlice/moduleSlice';
 import { getErrorStatus } from '@/app/common/utils/errorHandler';
 import { useAppDispatch, useAppSelector } from '@/app/lib/store/hooks';
 import { RootState } from '@/app/lib/store/store';
@@ -24,9 +25,14 @@ const Home = () => {
     currentUser,
   } = useAppSelector((state) => state.auth);
 
+  const {
+  moduleList,
+  moduleSiteId,
+  moduleLoaded,
+} = useAppSelector((state) => state.allModules);
+
   const dispatch = useAppDispatch();
   const router = useRouter();
-   const [moduleList, setModuleList] = useState<any[]>([]);
   const [sites, setSites] = useState<any[]>([]);
   const [sessionId, setSessionId] = useState<any>();
   const [sessionToken , setSessionToken] = useState('')
@@ -225,19 +231,38 @@ const handleSiteSubmit = async (selectedSite: any) => {
 
 
   const getMobModuleListBySId = async (sId: number) => {
+    const siteId = Number(sId);
+
+    if (!siteId) return;
+
+    // Don't call API if modules
+    // are already loaded for this site
+    if (
+      moduleLoaded &&
+      Number(moduleSiteId) === siteId
+    ) {
+      console.log('Module already cached:', siteId);
+      return;
+    }
+
     const idDto = {
       id21: Number(currentUser?.companyId),
-      id22: Number(sId),
-      id23: Number(currentUser?.userId)
-    }
+      id22: siteId,
+      id23: Number(currentUser?.userId),
+    };
 
     try {
-      const response = await getModuleListSid(idDto).unwrap()
-      setModuleList(response) 
-    } catch (error) {
+      const response = await getModuleListSid(idDto).unwrap();
 
+      dispatch(
+        setModuleList({
+          moduleList: response,
+          siteId,
+        })
+      );
+    } catch (error) {
     }
-  }
+  };
 
 
   const onHandleSelectModule = () => {

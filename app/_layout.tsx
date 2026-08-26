@@ -17,8 +17,6 @@ import SessionExpiredDialog from "./auth/components/SessionExpiredDialog";
 
 
 
-
-
 function SessionHeartbeat() {
   const currentUser = useSelector(
     (state: RootState) => state.auth.currentUser
