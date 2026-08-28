@@ -20,7 +20,7 @@ export const HEADER_CONFIG: Record<string, HeaderConfig> = {
         showLogo: false,
     },
     MyAssignment: {
-        title: 'My Assignments',
+        title: '',
         showBack: true,
         showMenu: false,
         showLogo: false,

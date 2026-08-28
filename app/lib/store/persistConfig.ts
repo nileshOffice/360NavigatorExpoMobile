@@ -15,3 +15,12 @@ export const persistConfig: PersistConfig<any> = {
         "safetyAcknowledged"
     ],
 };
+
+export const assetWalkDownPersistConfig: PersistConfig<any> = {
+    key: 'assetWalkDown',
+    storage: AsyncStorage,
+    whitelist: [
+        "selectedTab",
+        "selectedActivity",
+    ],
+};

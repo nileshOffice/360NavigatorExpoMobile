@@ -38,7 +38,7 @@ const Header = ({ setSidebarOpen }: HeaderProps ) => {
   
     return (
         <View style={styles.header}>
-            <View className="h-22 flex-row items-center px-6">
+            <View className="h-14 flex-row items-center px-4">
 
                 {/* LEFT SIDE */}
                 <View className="flex-1 flex-row items-center">

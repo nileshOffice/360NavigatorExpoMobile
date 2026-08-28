@@ -47,7 +47,7 @@ const AppAccordion = ({
     <View
 
       className={clsx(
-                 "mb-3 border-t border-r border-b rounded-xl border-slate-200/50 bg-card/80  shadow-xs",
+                 "mb-3  rounded-xl  bg-card/80 ",
                  className
              )}
     

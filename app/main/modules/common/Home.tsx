@@ -13,7 +13,7 @@ import { useAppDispatch, useAppSelector } from '@/app/lib/store/hooks';
 import { RootState } from '@/app/lib/store/store';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { View } from 'react-native';
+import { Alert, View } from 'react-native';
 import { useSelector } from 'react-redux';
 import ModuleList from './ModuleList';
 import SiteList from './SiteList';
@@ -30,6 +30,8 @@ const Home = () => {
   moduleSiteId,
   moduleLoaded,
 } = useAppSelector((state) => state.allModules);
+
+  
 
   const dispatch = useAppDispatch();
   const router = useRouter();
@@ -265,10 +267,15 @@ const handleSiteSubmit = async (selectedSite: any) => {
   };
 
 
-  const onHandleSelectModule = () => {
-    router.replace(APP_ROUTES.assetRegistry);
+  const onHandleSelectModule = (item:any) => {
+    if(item.redirectURL === "/dqa-mob-asset-registry")  {
+           router.push(APP_ROUTES.assetRegistry);
+    }
+    else {
+      Alert.alert("Module Not Yet Come")
+    }
+   
   }
-
 
 
 

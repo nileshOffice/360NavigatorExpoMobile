@@ -5,7 +5,7 @@ export const walkdownList = [
     description: 'Safety & Compliance Inspection',
     assets: 13,
     date: '18 May 2025',
-    icon: 'clipboard-check-outline',
+    icon: 'clipboard-arrow-right-outline',
     iconFamily: 'MaterialCommunityIcons',
     iconBackground: '#EAF4FF',
     iconColor: '#1677FF',
@@ -157,21 +157,38 @@ export const assignmentSectionHeader = [
     key: 'assigned',
     title: 'ASSIGNED',
     count: 3,
-    color: '#94A3B8',
+    iconFamily:'MaterialCommunityIcons',
+    iconName:'book-edit-outline',
+    bgcolorHeader: 'bg-blue-700/10',
+    bgcolorBody:'bg-blue-700/5',
+    bgIcon:'#2b7fff',
+    borderCard:'border-blue-200',
+    accordionCard:'border-blue-200'
    
   },
   {
     key: 'added',
     title: 'ADDED',
     count: 2,
-    color: '#7C3AED',
+     iconFamily:'MaterialCommunityIcons',
+    iconName:'book-plus-outline',
+     bgcolorHeader: 'bg-purple-100',
+    bgcolorBody:' bg-[#7C3AED]/5',
+    bgIcon:'#7C3AED',
+    borderCard:'border-[#7C3AED]/10',
+    accordionCard:'border-purple-200'
   },
   {
     key: 'completed',
     title: 'COMPLETED',
     count: 3,
-    color: '#16A34A',
- 
+     iconFamily:'MaterialCommunityIcons',
+    iconName:'book-check-outline',
+    bgcolorHeader: 'bg-green-700/10',
+    bgcolorBody:'bg-green-100/5',
+    bgIcon:'#008236',
+    borderCard:'border-green-700/10',
+     accordionCard:'border-green-900/20'
   },
 ];
 

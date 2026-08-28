@@ -1,5 +1,5 @@
 import { api as baseApi } from "@/app/lib/api/baseApi";
-import { AssetListByActivityId, AssetWalkDownActivity, IdDto } from "./walkdownApi.types";
+import { AssetWalkDownActivity, IdDto } from "./walkdownApi.types";
 
 
 
@@ -16,7 +16,7 @@ export const worlkdownApi = baseApi.injectEndpoints({
         }),
 
 
-        getAssetListByActivityId: builder.query<AssetListByActivityId[], {id21:number,id22:number ,id23:number}>({
+        getAssetListByActivityId: builder.query<any[], {id21:number,id22:number ,id23:number}>({
             query: idDto => ({
                 url: '/api/dqa/getAssetListByActivityId',
                 method: 'POST',

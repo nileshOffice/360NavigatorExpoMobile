@@ -28,7 +28,7 @@ const initialState:AssetWalkDownState = {
 const assetWalkDownSlice = createSlice ({
     name:'assetWalkDown',
     initialState,
-
+   
    
     reducers: {
         
@@ -42,7 +42,7 @@ const assetWalkDownSlice = createSlice ({
 
         /* selecte a perticular wolkdown which is mostly use for redirect to walkdowndetail */
 
-       setSelectActivity:(
+       setSelectedActivity:(
         state,
         action:PayloadAction<AssetWalkDownActivity>,) => {
             state.selectedActivity = action.payload;
@@ -65,6 +65,6 @@ const assetWalkDownSlice = createSlice ({
     }
 })
 
-export const {setSelectedTab, setSelectActivity, clearSelectedActivity, resetAssetWalkDownState} = assetWalkDownSlice.actions
+export const {setSelectedTab, setSelectedActivity, clearSelectedActivity, resetAssetWalkDownState} = assetWalkDownSlice.actions
 
 export default assetWalkDownSlice.reducer;

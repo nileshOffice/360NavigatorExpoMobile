@@ -16,8 +16,8 @@ import { router } from 'expo-router';
 import React, { useEffect, useMemo } from 'react';
 import { FlatList, StyleSheet, View } from 'react-native';
 import { useGetAssetWalkDownActivityListQuery } from '../api/walkdownApi';
-import { IdDto } from '../api/walkdownApi.types';
-import { setSelectedTab } from '../redux/walkDownSlice/selectedWalkDown';
+import { AssetWalkDownActivity, IdDto } from '../api/walkdownApi.types';
+import { setSelectedActivity, setSelectedTab } from '../redux/walkDownSlice/selectedWalkDown';
 
 
 export interface WalkdownItem {
@@ -54,7 +54,7 @@ const AssetRegistry = () => {
   const dispatch = useAppDispatch();
 
   const activeTab = useAppSelector(
-    state => state.assetWolkDown.selectedTab
+    state => state.assetWalkDown.selectedTab
   )
 
   const { currentUser } = useAppSelector((state) => state.auth);
@@ -188,14 +188,14 @@ const AssetRegistry = () => {
         </View>
 
         <AppText variant="h6" className="text-center">
-          Activity  List Not available
+            Activity Assignmnet List Not Found
         </AppText>
 
         <AppText
           variant="bodySmall"
           className="mt-1 text-center text-text-tertiary"
         >
-          There are no Activity available for this site.
+          There are no Activity Assignmnet available for this site.
         </AppText>
       </View>
     );
@@ -253,6 +253,18 @@ const AssetRegistry = () => {
   }
 
 
+  const handleActivityPress = (item: AssetWalkDownActivity) => {
+    dispatch(setSelectedActivity(item));
+
+    router.push({
+      pathname: APP_ROUTES.assetAssignment as any,
+      params: {
+        expandPanel: 'assigned',
+      },
+    });
+  };
+
+
 
 
   return (
@@ -273,14 +285,7 @@ const AssetRegistry = () => {
             keyExtractor={(item) => item?.id.toString()}
             renderItem={({ item }) => (
               <Card className='mb-2' pressable={true}
-                onPress={() =>
-                  router.replace({
-                     pathname: APP_ROUTES.assetAssignment as any,
-                    params: {
-                      selectedActivityData: JSON.stringify(item),
-                    },
-                  })
-                }
+                 onPress={() => handleActivityPress(item)}
              >
                 <View className='flex-row justify-between gap-2 items-start'>
                   <View className='flex-row gap-4'>

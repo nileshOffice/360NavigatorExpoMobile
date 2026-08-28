@@ -19,7 +19,7 @@ pressable = false,
     if (pressable) {
     return (
         <Pressable
-      
+      style={styles.appCard}
         accessibilityRole="button"
         accessibilityLabel="Card"
         className={clsx(
@@ -39,7 +39,7 @@ pressable = false,
             <View style={styles.appCard}
 
                 className={clsx(
-                    " rounded-xl p-4  shadow-sm! border border-border-light bg-surface",
+                    "rounded-xl p-4  shadow-sm! border border-border-light ",
                     className
                 )}
                 {...props}
