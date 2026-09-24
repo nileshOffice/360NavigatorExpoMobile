@@ -1,4 +1,3 @@
-import React from "react";
 import { TextInput, View } from "react-native";
 import AppIcon from "../AppIcon";
 
@@ -22,7 +21,8 @@ const SearchInput = ({
       <AppIcon
         name="search"
         size={20}
-        className="text-muted-foreground"
+        family="Feather"
+        color="#94A3B8"
       />
 
       <TextInput

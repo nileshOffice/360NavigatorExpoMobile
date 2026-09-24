@@ -2,7 +2,7 @@ import { applicationApi } from "@/app/auth/applicationApi";
 import authReducer from "@/app/auth/authSlice";
 import moduleReducer from "@/app/common/redux/homeSlice/moduleSlice";
 import { api as baseApi } from "@/app/lib/api/baseApi";
-
+import assetFormReducer from "@/app/main/modules/warkdown/redux/walkDownSlice/assetFormSlice";
 import assetWalkDownReducer from "@/app/main/modules/warkdown/redux/walkDownSlice/selectedWalkDown";
 import { combineReducers } from "@reduxjs/toolkit";
 import { persistReducer } from "redux-persist";
@@ -13,6 +13,7 @@ export const rootReducer = combineReducers({
         persistConfig,
         authReducer
     ),
+     assetForm: assetFormReducer,
     allModules: moduleReducer,
     assetWalkDown: persistReducer( assetWalkDownPersistConfig,assetWalkDownReducer),
     [baseApi.reducerPath]: baseApi.reducer,

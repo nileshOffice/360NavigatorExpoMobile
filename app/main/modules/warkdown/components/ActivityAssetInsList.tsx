@@ -1,6 +1,5 @@
 import AppIcon from '@/app/common/components/ui/AppIcon';
 import { AppText, Heading } from '@/app/common/components/ui/Typography';
-import React from 'react';
 import { FlatList, View } from 'react-native';
 
 

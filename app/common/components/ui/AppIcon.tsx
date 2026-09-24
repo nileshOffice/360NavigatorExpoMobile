@@ -1,9 +1,8 @@
 import { cn } from "@/app/lib/cn";
 import { AntDesign, Feather, FontAwesome6, Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import React from "react";
 
 
-type IconFamily = | 'Ionicons'| 'MaterialCommunityIcons'| 'Feather'| 'AntDesign' | 'FontAwesome6' ;
+export type IconFamily = | 'Ionicons'| 'MaterialCommunityIcons'| 'Feather'| 'AntDesign' | 'FontAwesome6' ;
 
 interface AppIconProps {
     family?:IconFamily,

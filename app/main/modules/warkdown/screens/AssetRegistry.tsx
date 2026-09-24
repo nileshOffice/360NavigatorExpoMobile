@@ -13,8 +13,8 @@ import { useAppDispatch, useAppSelector } from '@/app/lib/store/hooks';
 import { RootState } from '@/app/lib/store/store';
 import { formatDateTime } from '@/app/lib/utils';
 import { router } from 'expo-router';
-import React, { useEffect, useMemo } from 'react';
-import { FlatList, StyleSheet, View } from 'react-native';
+import { useEffect, useMemo } from 'react';
+import { FlatList, View } from 'react-native';
 import { useGetAssetWalkDownActivityListQuery } from '../api/walkdownApi';
 import { AssetWalkDownActivity, IdDto } from '../api/walkdownApi.types';
 import { setSelectedActivity, setSelectedTab } from '../redux/walkDownSlice/selectedWalkDown';
@@ -376,4 +376,3 @@ const AssetRegistry = () => {
 
 export default AssetRegistry
 
-const styles = StyleSheet.create({})

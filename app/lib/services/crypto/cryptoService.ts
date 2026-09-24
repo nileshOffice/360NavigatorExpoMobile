@@ -32,10 +32,7 @@ class CryptoService {
    * Check whether encryption is ready.
    */
   isConfigured(): boolean {
-    return Boolean(
-      this.encryptionKey &&
-      this.encryptionIV
-    );
+    return Boolean(this.encryptionKey && this.encryptionIV);
   }
 
   // =========================================================
@@ -44,26 +41,18 @@ class CryptoService {
 
   private getKey(): CryptoJS.lib.WordArray {
     if (!this.encryptionKey) {
-      throw new Error(
-        "[CryptoService] Encryption key is not configured."
-      );
+      throw new Error("[CryptoService] Encryption key is not configured.");
     }
 
-    return CryptoJS.enc.Base64.parse(
-      this.encryptionKey
-    );
+    return CryptoJS.enc.Base64.parse(this.encryptionKey);
   }
 
   private getIV(): CryptoJS.lib.WordArray {
     if (!this.encryptionIV) {
-      throw new Error(
-        "[CryptoService] Encryption IV is not configured."
-      );
+      throw new Error("[CryptoService] Encryption IV is not configured.");
     }
 
-    return CryptoJS.enc.Base64.parse(
-      this.encryptionIV
-    );
+    return CryptoJS.enc.Base64.parse(this.encryptionIV);
   }
 
   // =========================================================
@@ -80,13 +69,9 @@ class CryptoService {
    *
    * This method receives the raw loadApplicationData response.
    */
-  configureFromApplicationData(
-    response: string
-  ): void {
+  configureFromApplicationData(response: string): void {
     if (!response) {
-      throw new Error(
-        "[CryptoService] Empty application data response."
-      );
+      throw new Error("[CryptoService] Empty application data response.");
     }
 
     try {
@@ -96,9 +81,7 @@ class CryptoService {
         .replace(/^'|'$/g, "")
         .replace(/\\"/g, '"');
 
-      const decodedResponse = this.decodeBase64ToText(
-        unwrappedValue
-      );
+      const decodedResponse = this.decodeBase64ToText(unwrappedValue);
 
       const parts = decodedResponse.split("|");
 
@@ -106,22 +89,14 @@ class CryptoService {
       const iv = parts[9];
 
       if (!key || !iv) {
-        throw new Error(
-          "[CryptoService] Encryption key/IV not found."
-        );
+        throw new Error("[CryptoService] Encryption key/IV not found.");
       }
 
       this.configure(key, iv);
 
-      console.log(
-        "[CryptoService] Encryption configured successfully."
-      );
-
+      console.log("[CryptoService] Encryption configured successfully.");
     } catch (error) {
-      console.error(
-        "[CryptoService] Failed to configure encryption:",
-        error
-      );
+      console.error("[CryptoService] Failed to configure encryption:", error);
 
       throw error;
     }
@@ -131,14 +106,10 @@ class CryptoService {
     const cleanedValue = value.trim();
 
     if (!cleanedValue) {
-      throw new Error(
-        "[CryptoService] Empty Base64 payload."
-      );
+      throw new Error("[CryptoService] Empty Base64 payload.");
     }
 
-    const normalizedValue = cleanedValue
-      .replace(/-/g, "+")
-      .replace(/_/g, "/");
+    const normalizedValue = cleanedValue.replace(/-/g, "+").replace(/_/g, "/");
 
     const paddedValue =
       normalizedValue.length % 4 === 0
@@ -162,29 +133,22 @@ class CryptoService {
    *
    * encryptPayloadsUsingAES256()
    */
-  encryptPayloadsUsingAES256(
-    body: any
-  ): string {
-
+  encryptPayloadsUsingAES256(body: any): string {
     if (!this.isConfigured()) {
-      throw new Error(
-        "[CryptoService] Encryption is not configured."
-      );
+      throw new Error("[CryptoService] Encryption is not configured.");
     }
 
-    const sanitizedBody =
-      this.convertDates(body);
+    const sanitizedBody = this.convertDates(body);
 
-    const encrypted =
-      CryptoJS.AES.encrypt(
-        JSON.stringify(sanitizedBody),
-        this.getKey(),
-        {
-          iv: this.getIV(),
-          mode: CryptoJS.mode.CBC,
-          padding: CryptoJS.pad.Pkcs7,
-        }
-      );
+    const encrypted = CryptoJS.AES.encrypt(
+      JSON.stringify(sanitizedBody),
+      this.getKey(),
+      {
+        iv: this.getIV(),
+        mode: CryptoJS.mode.CBC,
+        padding: CryptoJS.pad.Pkcs7,
+      },
+    );
 
     return encrypted.toString();
   }
@@ -198,14 +162,9 @@ class CryptoService {
    *
    * decryptAPIResponseUsingAES256()
    */
-  decryptAPIResponseUsingAES256(
-    response: string
-  ): any {
-
+  decryptAPIResponseUsingAES256(response: string): any {
     if (!this.isConfigured()) {
-      throw new Error(
-        "[CryptoService] Encryption is not configured."
-      );
+      throw new Error("[CryptoService] Encryption is not configured.");
     }
 
     if (
@@ -216,33 +175,36 @@ class CryptoService {
       return response;
     }
 
-    const encryptedResponse =
-      this.unwrapEncryptedResponse(response);
+    const encryptedResponse = this.unwrapEncryptedResponse(response);
 
     if (!encryptedResponse || !encryptedResponse.trim()) {
       return response;
     }
 
-    const decryptedText =
-      CryptoJS.AES.decrypt(
-        encryptedResponse,
-        this.getKey(),
-        {
-          iv: this.getIV(),
-          mode: CryptoJS.mode.CBC,
-          padding: CryptoJS.pad.Pkcs7,
-        }
-      ).toString(CryptoJS.enc.Utf8);
+    // Encrypted requests can still receive a plain JSON response from
+    // endpoints that do not encrypt their response body.
+    const plainResponse = this.parseJsonResponse(encryptedResponse);
+
+    if (plainResponse !== undefined) {
+      return this.convertKeysToCamelCase(plainResponse);
+    }
+
+    const decryptedText = CryptoJS.AES.decrypt(
+      encryptedResponse,
+      this.getKey(),
+      {
+        iv: this.getIV(),
+        mode: CryptoJS.mode.CBC,
+        padding: CryptoJS.pad.Pkcs7,
+      },
+    ).toString(CryptoJS.enc.Utf8);
 
     if (!decryptedText) {
-      throw new Error(
-        "[CryptoService] Decryption returned empty response."
-      );
+      throw new Error("[CryptoService] Decryption returned empty response.");
     }
 
     try {
-      const parsedResponse =
-        JSON.parse(decryptedText);
+      const parsedResponse = JSON.parse(decryptedText);
 
       /**
        * Angular behavior:
@@ -252,17 +214,12 @@ class CryptoService {
        */
       if (
         Array.isArray(parsedResponse) &&
-        parsedResponse.every(
-          item => typeof item === "string"
-        )
+        parsedResponse.every((item) => typeof item === "string")
       ) {
         return parsedResponse;
       }
 
-      return this.convertKeysToCamelCase(
-        parsedResponse
-      );
-
+      return this.convertKeysToCamelCase(parsedResponse);
     } catch {
       // Response wasn't JSON.
       return decryptedText;
@@ -279,28 +236,21 @@ class CryptoService {
    * encryptData()
    */
   encryptData(text: any): string {
-
     if (!this.isConfigured()) {
-      throw new Error(
-        "[CryptoService] Encryption is not configured."
-      );
+      throw new Error("[CryptoService] Encryption is not configured.");
     }
 
-    const value =
-      typeof text === "string"
-        ? text
-        : JSON.stringify(text);
+    const value = typeof text === "string" ? text : JSON.stringify(text);
 
-    const encrypted =
-      CryptoJS.AES.encrypt(
-        CryptoJS.enc.Utf8.parse(value),
-        this.getKey(),
-        {
-          iv: this.getIV(),
-          mode: CryptoJS.mode.CBC,
-          padding: CryptoJS.pad.Pkcs7,
-        }
-      );
+    const encrypted = CryptoJS.AES.encrypt(
+      CryptoJS.enc.Utf8.parse(value),
+      this.getKey(),
+      {
+        iv: this.getIV(),
+        mode: CryptoJS.mode.CBC,
+        padding: CryptoJS.pad.Pkcs7,
+      },
+    );
 
     return encrypted.toString();
   }
@@ -314,47 +264,27 @@ class CryptoService {
    *
    * getDecryptedData()
    */
-  getDecryptedData(
-    encryptedData: string | null
-  ): object | null {
-
-    if (
-      !encryptedData ||
-      !this.isConfigured()
-    ) {
+  getDecryptedData(encryptedData: string | null): object | null {
+    if (!encryptedData || !this.isConfigured()) {
       return null;
     }
 
     try {
+      const bytes = CryptoJS.AES.decrypt(encryptedData, this.getKey(), {
+        iv: this.getIV(),
+        mode: CryptoJS.mode.CBC,
+        padding: CryptoJS.pad.Pkcs7,
+      });
 
-      const bytes =
-        CryptoJS.AES.decrypt(
-          encryptedData,
-          this.getKey(),
-          {
-            iv: this.getIV(),
-            mode: CryptoJS.mode.CBC,
-            padding: CryptoJS.pad.Pkcs7,
-          }
-        );
-
-      const decrypted =
-        bytes.toString(
-          CryptoJS.enc.Utf8
-        );
+      const decrypted = bytes.toString(CryptoJS.enc.Utf8);
 
       if (!decrypted) {
         return null;
       }
 
       return JSON.parse(decrypted);
-
     } catch (error) {
-
-      console.error(
-        "[CryptoService] Local data decryption failed:",
-        error
-      );
+      console.error("[CryptoService] Local data decryption failed:", error);
 
       return null;
     }
@@ -364,25 +294,31 @@ class CryptoService {
   // RESPONSE UNWRAPPER
   // =========================================================
 
-  private unwrapEncryptedResponse(
-    response: string
-  ): string {
-
-    const trimmedResponse =
-      response.trim();
+  private unwrapEncryptedResponse(response: string): string {
+    const trimmedResponse = response.trim();
 
     try {
-
-      const parsedResponse: unknown =
-        JSON.parse(trimmedResponse);
+      const parsedResponse: unknown = JSON.parse(trimmedResponse);
 
       return typeof parsedResponse === "string"
         ? parsedResponse
         : trimmedResponse;
-
     } catch {
-
       return trimmedResponse;
+    }
+  }
+
+  private parseJsonResponse(response: string): unknown | undefined {
+    const firstCharacter = response.trim().charAt(0);
+
+    if (firstCharacter !== "{" && firstCharacter !== "[") {
+      return undefined;
+    }
+
+    try {
+      return JSON.parse(response);
+    } catch {
+      return undefined;
     }
   }
 
@@ -395,61 +331,43 @@ class CryptoService {
    *
    * convertKeysToCamelCase()
    */
-  convertKeysToCamelCase(
-    data: any
-  ): any {
-
+  convertKeysToCamelCase(data: any): any {
     // -----------------------------------------
     // ARRAY
     // -----------------------------------------
 
     if (Array.isArray(data)) {
-
       if (data.length === 0) {
         return data;
       }
 
       const firstRow = data[0];
 
-      if (
-        !firstRow ||
-        typeof firstRow !== "object"
-      ) {
+      if (!firstRow || typeof firstRow !== "object") {
         return data;
       }
 
       const keyMap: Record<string, string> = {};
 
-      Object.keys(firstRow).forEach(
-        key => {
+      Object.keys(firstRow).forEach((key) => {
+        const newKey =
+          key.toUpperCase() === key
+            ? key.toLowerCase()
+            : key.charAt(0).toLowerCase() + key.slice(1);
 
-          const newKey =
-            key.toUpperCase() === key
-              ? key.toLowerCase()
-              : key.charAt(0).toLowerCase() +
-                key.slice(1);
+        keyMap[key] = newKey;
+      });
 
-          keyMap[key] = newKey;
-        }
-      );
-
-      return data.map(obj => {
-
-        if (
-          !obj ||
-          typeof obj !== "object"
-        ) {
+      return data.map((obj) => {
+        if (!obj || typeof obj !== "object") {
           return obj;
         }
 
         const newObj: any = {};
 
-        Object.keys(keyMap).forEach(
-          oldKey => {
-            newObj[keyMap[oldKey]] =
-              obj[oldKey];
-          }
-        );
+        Object.keys(keyMap).forEach((oldKey) => {
+          newObj[keyMap[oldKey]] = obj[oldKey];
+        });
 
         return newObj;
       });
@@ -459,20 +377,14 @@ class CryptoService {
     // OBJECT
     // -----------------------------------------
 
-    if (
-      typeof data === "object" &&
-      data !== null
-    ) {
-
+    if (typeof data === "object" && data !== null) {
       const result: any = {};
 
-      Object.keys(data).forEach(key => {
-
+      Object.keys(data).forEach((key) => {
         const newKey =
           key.toUpperCase() === key
             ? key.toLowerCase()
-            : key.charAt(0).toLowerCase() +
-              key.slice(1);
+            : key.charAt(0).toLowerCase() + key.slice(1);
 
         result[newKey] = data[key];
       });
@@ -492,14 +404,8 @@ class CryptoService {
    *
    * convertDates()
    */
-  private convertDates(
-    obj: any
-  ): any {
-
-    if (
-      obj === null ||
-      obj === undefined
-    ) {
+  private convertDates(obj: any): any {
+    if (obj === null || obj === undefined) {
       return obj;
     }
 
@@ -508,21 +414,14 @@ class CryptoService {
     }
 
     if (Array.isArray(obj)) {
-
-      return obj.map(
-        item => this.convertDates(item)
-      );
+      return obj.map((item) => this.convertDates(item));
     }
 
     if (typeof obj === "object") {
-
       const result: any = {};
 
-      Object.keys(obj).forEach(key => {
-
-        result[key] =
-          this.convertDates(obj[key]);
-
+      Object.keys(obj).forEach((key) => {
+        result[key] = this.convertDates(obj[key]);
       });
 
       return result;
@@ -535,26 +434,15 @@ class CryptoService {
   // DATE FORMAT
   // =========================================================
 
-  private formatDate(
-    date: Date
-  ): string {
+  private formatDate(date: Date): string {
+    const year = date.getFullYear();
 
-    const year =
-      date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
 
-    const month =
-      String(
-        date.getMonth() + 1
-      ).padStart(2, "0");
-
-    const day =
-      String(
-        date.getDate()
-      ).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
 
     return `${year}-${month}-${day}`;
   }
 }
 
-export const cryptoService =
-  new CryptoService();
+export const cryptoService = new CryptoService();

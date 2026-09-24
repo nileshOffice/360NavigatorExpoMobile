@@ -12,7 +12,7 @@ interface AppBottomSheetProps {
   onClose: () => void;
   enableContentPanningGesture?: boolean;
   enablePanDownToClose?: boolean;
-  size?: 'small' | 'medium' | 'large' | 'Xlarge';
+  size?: 'small' | 'medium' | 'large' | 'Xlarge' | 'dateBottomSheetSize';
   title?: string;
   description?: string;
   children?: React.ReactNode;
@@ -31,9 +31,7 @@ export default function AppBottomSheet({
   const bottomSheetRef = useRef<BottomSheetModal>(null);
   const wasVisible = useRef(false);
   const snapPoints = useMemo(
-    () => ({ small: ['30%'], medium: ['50%'], large: ['75%'], Xlarge: ['87%'] })[size],
-    [size]
-  );
+    () => ({  small: ['30%'],  dateBottomSheetSize: ['35%'], medium: ['45%'], large: ['75%'], Xlarge: ['87%'] })[size],[size]);
   const renderBackdrop = useCallback(
     (backdropProps: React.ComponentProps<typeof BottomSheetBackdrop>) => (
       <BottomSheetBackdrop
@@ -81,7 +79,7 @@ export default function AppBottomSheet({
       backdropComponent={renderBackdrop}
     >
       <BottomSheetView className="flex-1 px-5 pb-8 pt-2 ">
-        <View className="mb-5">
+        <View className="mb-5 flex-1">
           {title && (
             <Text className="text-xl font-bold text-text-primary">
               {title}

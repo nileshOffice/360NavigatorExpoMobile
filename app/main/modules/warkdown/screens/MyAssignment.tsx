@@ -3,12 +3,13 @@ import AppIcon from '@/app/common/components/ui/AppIcon';
 import Button from '@/app/common/components/ui/Button/Button';
 import CardSkeleton from '@/app/common/components/ui/CardSkeleton';
 import { AppText, Heading } from '@/app/common/components/ui/Typography';
+import { APP_ROUTES } from '@/app/common/config/routes';
 import { assignmentSectionHeader } from '@/app/data';
 import { useAppSelector } from '@/app/lib/store/hooks';
 import { RootState } from '@/app/lib/store/store';
 import MyAssignemnt from '@/assets/images/assignment.svg';
-import { useLocalSearchParams } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import { router, useLocalSearchParams } from 'expo-router';
+import { useEffect, useState } from 'react';
 import { Text, View } from 'react-native';
 import { useGetAssetListByActivityIdQuery } from '../api/walkdownApi';
 import ActivityAssetInsList from '../components/ActivityAssetInsList';
@@ -20,7 +21,6 @@ const MyAssignment = () => {
         state => state.assetWalkDown.selectedActivity
     );
     const [assetDivStep, setAssetDivStep] = useState(0);
-
     const [isAssetOrInstrumentList, setIsAssetOrInstrumentList] = useState(false);
     // const [selectedActivityId, setSelectedActivityId] = useState<any>(selectedActivity?.woId);
     const { expandPanel } = useLocalSearchParams();
@@ -28,8 +28,9 @@ const MyAssignment = () => {
         expandPanel === 'assigned' ? 'assigned' : "assigned"
     );
 
+    
 
-    const [assetOrInstrument, setAssetOrInstrument] = useState(1);
+
     const [assignedAssetListData, setAssignedAssetListData] = useState<any[]>([]);
     const [completedAssetListData, setCompletedAssetListData] = useState<any[]>([]);
     const [addedAssetListData, setAddedAssetListData] = useState<any[]>([]);
@@ -40,7 +41,6 @@ const MyAssignment = () => {
         (state: RootState) => state.auth.selectedSite
     );
 
-    console.log("selectedActivity", selectedActivity)
 
 
 
@@ -126,6 +126,11 @@ const MyAssignment = () => {
             current === sectionKey ? null : sectionKey
         );
     };
+
+
+    const handleCreateAsset = () => {
+          router.push(APP_ROUTES.createNewAsset);
+    }
 
 
 
@@ -296,7 +301,7 @@ const MyAssignment = () => {
 
 
                 <View className="absolute bottom-2 left-0 right-0  py-3 ">
-                    <Button fullWidth>
+                    <Button fullWidth onPress={handleCreateAsset}>
                         <View className="flex-row items-center justify-center gap-2">
                             <AppIcon
                                 name="plus-circle"

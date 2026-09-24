@@ -1,23 +1,23 @@
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 import {
-    Modal,
-    Pressable,
-    StyleSheet,
-    View,
+  Modal,
+  Pressable,
+  StyleSheet,
+  View,
 } from 'react-native';
 import Animated, {
-    Easing,
-    runOnJS,
-    useAnimatedStyle,
-    useSharedValue,
-    withTiming,
+  Easing,
+  runOnJS,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
 } from 'react-native-reanimated';
 
 import AppIcon from '../AppIcon';
 
 import AppText from '../Typography/AppText';
 import {
-    AppModalProps
+  AppModalProps
 } from './AppModal.types';
 
 const AppModal = ({
@@ -171,7 +171,7 @@ const AppModal = ({
       <View style={styles.overlay}>
         <Animated.View
           style={[
-            StyleSheet.absoluteFillObject,
+            StyleSheet.absoluteFill,
             styles.backdrop,
             backdropStyle,
           ]}

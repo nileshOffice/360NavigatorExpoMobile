@@ -14,6 +14,7 @@ import {
 } from '@/app/auth/authSlice';
 import { useRouter } from "expo-router";
 import SessionExpiredDialog from "./auth/components/SessionExpiredDialog";
+import { ToastProvider } from "./common/components/ui/toast";
 
 
 
@@ -136,7 +137,7 @@ export default function RootLayout() {
       <Provider store={store}>
         <PersistGate loading={null} persistor={persistor}>
           <BottomSheetModalProvider>
-
+              <ToastProvider>
 
              <SessionHeartbeat />
 
@@ -156,7 +157,7 @@ export default function RootLayout() {
                 }}
               />
             )}
-
+            </ToastProvider>
           </BottomSheetModalProvider>
         </PersistGate>
       </Provider>

@@ -1,3 +1,4 @@
+
 export type HeaderConfig = {
     title: string;
     showBack: boolean;
@@ -21,6 +22,12 @@ export const HEADER_CONFIG: Record<string, HeaderConfig> = {
     },
     MyAssignment: {
         title: '',
+        showBack: true,
+        showMenu: false,
+        showLogo: false,
+    },
+     CreateNewAsset: {
+        title: 'Create New Asset',
         showBack: true,
         showMenu: false,
         showLogo: false,
