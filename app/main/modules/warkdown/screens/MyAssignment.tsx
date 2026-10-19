@@ -5,23 +5,36 @@ import CardSkeleton from '@/app/common/components/ui/CardSkeleton';
 import { AppText, Heading } from '@/app/common/components/ui/Typography';
 import { APP_ROUTES } from '@/app/common/config/routes';
 import { assignmentSectionHeader } from '@/app/data';
-import { useAppSelector } from '@/app/lib/store/hooks';
+import { BASE_URL } from '@/app/lib/config/apiConfig';
+import { useAppDispatch, useAppSelector } from '@/app/lib/store/hooks';
 import { RootState } from '@/app/lib/store/store';
 import MyAssignemnt from '@/assets/images/assignment.svg';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Text, View } from 'react-native';
-import { useGetAssetListByActivityIdQuery } from '../api/walkdownApi';
+import { useGetAssetListByActivityIdQuery, useLazyGetFileListByObjectIdQuery } from '../api/walkdownApi';
 import ActivityAssetInsList from '../components/ActivityAssetInsList';
+import { setSelectedAssetData } from '../redux/walkDownSlice/selectedAssetData';
+
+const getImageUri = (filePath: string) => {
+    if (/^(https?|file|content|data):/i.test(filePath)) {
+        return filePath;
+    }
+
+    return `${BASE_URL.replace(/\/$/, '')}/${filePath.replace(/^\/+/, '')}`;
+};
 
 
 const MyAssignment = () => {
-
+    
+    const dispatch = useAppDispatch();
+    
     const selectedActivity = useAppSelector(
         state => state.assetWalkDown.selectedActivity
     );
     const [assetDivStep, setAssetDivStep] = useState(0);
     const [isAssetOrInstrumentList, setIsAssetOrInstrumentList] = useState(false);
+    const imageRequestIdRef = useRef(0);
     // const [selectedActivityId, setSelectedActivityId] = useState<any>(selectedActivity?.woId);
     const { expandPanel } = useLocalSearchParams();
     const [expandedSection, setExpandedSection] = useState<string | null>(
@@ -32,18 +45,14 @@ const MyAssignment = () => {
 
 
     const [assignedAssetListData, setAssignedAssetListData] = useState<any[]>([]);
-    const [completedAssetListData, setCompletedAssetListData] = useState<any[]>([]);
     const [addedAssetListData, setAddedAssetListData] = useState<any[]>([]);
+    const [completedAssetListData, setCompletedAssetListData] = useState<any[]>([]);
 
 
     const { currentUser } = useAppSelector((state) => state.auth);
     const selectedSite = useAppSelector(
         (state: RootState) => state.auth.selectedSite
     );
-
-
-
-
 
 
     const idDto = {
@@ -65,6 +74,11 @@ const MyAssignment = () => {
     } = useGetAssetListByActivityIdQuery(idDto, {
         skip: !canLoadActivityList,
     });
+    const [getFileListByObjectId] = useLazyGetFileListByObjectIdQuery();
+
+
+      
+    
 
 
 
@@ -132,6 +146,29 @@ const MyAssignment = () => {
           router.push(APP_ROUTES.createNewAsset);
     }
 
+    const handleClickExercise = async (item: any) => {debugger
+
+        dispatch(setSelectedAssetData(item))
+
+        // dispatch(
+        //     setUpdateAssetForm(
+        //         mapSelectedAssetToForm(item)
+        //     )
+        // );
+
+        if (item.id == null) {
+            router.push(APP_ROUTES.updateDeleteAsset);
+          //  router.push(APP_ROUTES.updateAssetDetail);
+            return;
+        }
+
+         router.push(APP_ROUTES.updateDeleteAsset);
+       // router.push(APP_ROUTES.updateAssetDetail);
+
+
+       
+    }
+
 
 
 
@@ -182,6 +219,8 @@ const MyAssignment = () => {
             </View>
         );
     }
+
+  
 
 
 
@@ -257,16 +296,12 @@ const MyAssignment = () => {
                                     {/* RIGHT */}
                                     <View className="flex-row items-center gap-2">
 
-                                        <AppText
-                                            variant="label"
-                                            weight="medium"
-                                        >
+                                        <AppText variant="label" weight="medium">
                                             Asset: {sectionData?.length}
                                         </AppText>
 
                                         <AppIcon
-                                            family="MaterialCommunityIcons"
-                                            name={
+                                            family="MaterialCommunityIcons" name={
                                                 isExpanded
                                                     ? 'chevron-up'
                                                     : 'chevron-down'
@@ -290,6 +325,7 @@ const MyAssignment = () => {
                                         isLoading={isLoading}
                                         isFetching={isFetching}
                                         borderColor={headerItem?.borderCard}
+                                        onHandleExercise={handleClickExercise}
                                     />
 
                                 </View>

@@ -9,8 +9,8 @@ export interface InputProps extends TextInputProps {
   helperText?: string;
   error?: string;
   success?: string;
-leftIcon?: ReactNode;
-rightIcon?: ReactNode;
+  leftIcon?: ReactNode;
+  rightIcon?: ReactNode;
   variant?: InputVariant;
   size?: InputSize;
 
@@ -27,4 +27,5 @@ rightIcon?: ReactNode;
   labelClassName?: string;
   helperClassName?: string;
   errorClassName?: string;
+  onRightIconPress?: () => void;
 }

@@ -1,36 +1,40 @@
-
 export type HeaderConfig = {
-    title: string;
-    showBack: boolean;
-    showMenu: boolean;
-    showLogo: boolean;
+  title: string;
+  showBack: boolean;
+  showMenu: boolean;
+  showLogo: boolean;
 };
 
 export const HEADER_CONFIG: Record<string, HeaderConfig> = {
-    main: {
-        title: '',
-        showBack: false,
-        showMenu: true,
-        showLogo: true,
-    },
+  main: {
+    title: "",
+    showBack: false,
+    showMenu: true,
+    showLogo: true,
+  },
 
-    AssetRegistry: {
-        title: 'Asset Registry',
-        showBack: true,
-        showMenu: false,
-        showLogo: false,
-    },
-    MyAssignment: {
-        title: '',
-        showBack: true,
-        showMenu: false,
-        showLogo: false,
-    },
-     CreateNewAsset: {
-        title: 'Create New Asset',
-        showBack: true,
-        showMenu: false,
-        showLogo: false,
-    },
-
+  AssetRegistry: {
+    title: "Asset Registry",
+    showBack: true,
+    showMenu: false,
+    showLogo: false,
+  },
+  MyAssignment: {
+    title: "",
+    showBack: true,
+    showMenu: false,
+    showLogo: false,
+  },
+  CreateNewAsset: {
+    title: "Create New Asset",
+    showBack: true,
+    showMenu: false,
+    showLogo: false,
+  },
+  UpdateDeleteAsset: {
+    title: "Update/Delete Asset",
+    showBack: true,
+    showMenu: false,
+    showLogo: false,
+  },
 };

@@ -38,8 +38,8 @@ import { router } from "expo-router";
 import AssetSelectionDrawer from "../components/AssetSelectionDrawer";
 import CalculateAssetEcr from "../components/CalculateAssetEcr";
 import {
+  saveAssetForm as assetAssetFormAction,
   resetAssetForm,
-  updateAssetField as updateAssetFieldAction,
 } from "../redux/walkDownSlice/assetFormSlice";
 
 type AssetForm = typeof initialAssetForm;
@@ -95,7 +95,7 @@ const CreateNewAsset = () => {
     null
   );
 
-  const isAssetNameValid = assetForm.general.assetName.trim().length > 0;
+  const isAssetNameValid = assetForm?.saveAssetForm?.general.assetName.trim().length > 0;
    const selectedActivity = useAppSelector(
           state => state.assetWalkDown.selectedActivity
       );
@@ -340,10 +340,10 @@ const [
   // UPDATE FORM FIELD
   // =========================================================
 
-  const updateAssetField = useCallback(
+  const saveAssetField = useCallback(
     (section: AssetSection, field: string, value: any) => {
       dispatch(
-        updateAssetFieldAction({
+        assetAssetFormAction({
           section,
           field,
           value,
@@ -359,7 +359,7 @@ const [
 
   const getFieldValue = useCallback(
     (field: AssetField) => {
-      const sectionData = assetForm[field.section];
+      const sectionData = assetForm?.saveAssetForm[field.section];
       if (!sectionData || typeof sectionData !== "object") {
         return "";
       }
@@ -578,7 +578,7 @@ const handleFieldPress = useCallback(
             rightIcon
             type="text"
             onChangeText={(text) =>
-              updateAssetField(field.section, field.fieldName, text)
+              saveAssetField(field.section, field.fieldName, text)
             }
           />
         );
@@ -599,7 +599,7 @@ const handleFieldPress = useCallback(
             type="text"
             rightIcon={null}
             onChangeText={(text) =>
-              updateAssetField(field.section, field.fieldName, text)
+              saveAssetField(field.section, field.fieldName, text)
             }
           />
         );
@@ -622,7 +622,7 @@ const handleFieldPress = useCallback(
             onChange={(date) => {
               const normalizedDate = formatDateForStorage(date);
               setSelectedDate(date);
-              updateAssetField(field.section, field.fieldName, normalizedDate);
+              saveAssetField(field.section, field.fieldName, normalizedDate);
             }}
           />
         );
@@ -632,9 +632,9 @@ const handleFieldPress = useCallback(
         return (
           <ImageUpload
             key={field.id}
-            photos={assetForm?.custom?.uploadePhotos ?? []}
+            photos={assetForm?.saveAssetForm?.custom?.uploadePhotos ?? []}
             onChange={(updatedPhotos) => {
-              updateAssetField(
+              saveAssetField(
                 "custom",
                 "uploadePhotos",
                 updatedPhotos
@@ -674,7 +674,7 @@ const handleFieldPress = useCallback(
         />
       );
     },
-    [getFieldValue, handleFieldPress, updateAssetField],
+    [getFieldValue, handleFieldPress, saveAssetField],
   );
 
   // =========================================================
@@ -800,24 +800,24 @@ const handleFieldPress = useCallback(
   const buildReviewPayload = useCallback(() => {
     const reviewData = {
       general: {
-        assetName: assetForm.general.assetName || "Not selected",
+        assetName: assetForm?.saveAssetForm?.general.assetName || "Not selected",
       },
       location: {
-        location: assetForm.location.location?.name ?? "Not selected",
+        location: assetForm?.saveAssetForm?.location.location?.name ?? "Not selected",
       },
       classification: {
-        assetType: assetForm.classification.assetType?.name ?? "Not selected",
-        assetClass: assetForm.classification.assetClass?.name ?? "Not selected",
-        serialNumber: assetForm.classification.serialNumber || "Not selected",
+        assetType: assetForm?.saveAssetForm?.classification.assetType?.name ?? "Not selected",
+        assetClass: assetForm?.saveAssetForm?.classification.assetClass?.name ?? "Not selected",
+        serialNumber: assetForm?.saveAssetForm?.classification.serialNumber || "Not selected",
       },
       technical: {
-        manufacturer: assetForm.technical.manufacturer?.name ?? "Not selected",
-        model: assetForm.technical.model || "Not selected",
+        manufacturer: assetForm?.saveAssetForm?.technical.manufacturer?.name ?? "Not selected",
+        model: assetForm?.saveAssetForm?.technical.model || "Not selected",
         installedDate:
-          assetForm.technical.installedDate ?? "Not selected",
+          assetForm?.saveAssetForm?.technical.installedDate ?? "Not selected",
       },
       custom: {
-        uploadedPhotosCount: assetForm.custom.uploadePhotos?.length ?? 0,
+        uploadedPhotosCount: assetForm?.saveAssetForm?.custom.uploadePhotos?.length ?? 0,
       },
     };
 
@@ -826,7 +826,7 @@ const handleFieldPress = useCallback(
 
   const renderReviewScreen = useCallback(() => {
     const reviewData = buildReviewPayload();
-    const uploadedPhotos = assetForm.custom.uploadePhotos ?? [];
+    const uploadedPhotos = assetForm?.saveAssetForm?.custom.uploadePhotos ?? [];
 
     return (
       <ScrollView
@@ -921,7 +921,7 @@ const handleFieldPress = useCallback(
         </View>
       </ScrollView>
     );
-  }, [assetForm.custom.uploadePhotos, buildReviewPayload, getSectionInformation]);
+  }, [assetForm?.saveAssetForm?.custom.uploadePhotos, buildReviewPayload, getSectionInformation]);
 
   const renderCurrentStep = useCallback(() => {
     if (isReviewMode) {
@@ -1024,14 +1024,14 @@ const handleFieldPress = useCallback(
 
     // Build final asset string
     const finalString = buildAssetDataString({
-      assetName: assetForm.general.assetName,
-      location: assetForm.location.location?.name,
-      assetType: assetForm.classification.assetType?.name,
-      assetClass: assetForm.classification.assetClass?.name,
-      serialNumber: assetForm.classification.serialNumber,
-      manufacturer: assetForm.technical.manufacturer?.name,
-      model: assetForm.technical.model,
-      installedDate: assetForm.technical.installedDate,
+      assetName: assetForm?.saveAssetForm?.general.assetName,
+      location: assetForm?.saveAssetForm?.location.location?.name,
+      assetType: assetForm?.saveAssetForm?.classification.assetType?.name,
+      assetClass: assetForm?.saveAssetForm?.classification.assetClass?.name,
+      serialNumber: assetForm?.saveAssetForm?.classification.serialNumber,
+      manufacturer: assetForm?.saveAssetForm?.technical.manufacturer?.name,
+      model: assetForm?.saveAssetForm?.technical.model,
+      installedDate: assetForm?.saveAssetForm?.technical.installedDate,
     });
 
     console.log(assetForm)
@@ -1051,17 +1051,12 @@ const handleFieldPress = useCallback(
     };
 
 
-    console.log(
-      "Save asset API payload:",
-      payload
-    );
-
+ 
     try {
       const response = await saveAssetWalkDownDetails(payload).unwrap();
 
-      console.log("Asset save successful. Response:", response);
 
-      const uploadedPhotos = assetForm.custom?.uploadePhotos ?? [];
+      const uploadedPhotos = assetForm?.saveAssetForm?.custom?.uploadePhotos ?? [];
       const imageList = uploadedPhotos
         .map((image) => image.uri)
         .filter(Boolean);
@@ -1297,14 +1292,11 @@ const handleFieldPress = useCallback(
                     showSearch={true}
                     showContinue={true}
                     showSelectedFooter={true}
-                    onSelect={(node) => {
-                      console.log("Selected location:", node);
-                    }}
+                  
                     onContinue={(node) => {
-                      console.log("Confirmed location:", node);
 
                       if (activeField) {
-                        updateAssetField(
+                        saveAssetField(
                           activeField.section,
                           activeField.fieldName,
                           node
@@ -1353,14 +1345,12 @@ const handleFieldPress = useCallback(
                     showSearch={true}
                     showContinue={true}
                     showSelectedFooter={true}
-                    onSelect={(node) => {
-                      console.log("Selected work area:", node);
-                    }}
+                   
                     onContinue={(node) => {
-                      console.log("Confirmed work area:", node);
+                     
 
                       if (activeField) {
-                        updateAssetField(
+                        saveAssetField(
                           activeField.section,
                           activeField.fieldName,
                           node
@@ -1458,7 +1448,6 @@ const handleFieldPress = useCallback(
                         ? item?.parentId
                         : item?.info;
 
-                    console.log("Selected item:", selectedValue);
                   }}
                   onContinue={(item) => {
                     const selectedValue =
@@ -1472,10 +1461,9 @@ const handleFieldPress = useCallback(
                             }
                         : item?.info;
 
-                    console.log("Continue with:", selectedValue);
 
                     if (activeField) {
-                      updateAssetField(
+                      saveAssetField(
                         activeField.section,
                         activeField.fieldName,
                         selectedValue
@@ -1550,7 +1538,6 @@ const handleFieldPress = useCallback(
 };
 
 export default CreateNewAsset;
-function danger(arg0: { title: string; message: string; duration: number; }) {
-  throw new Error("Function not implemented.");
-}
+
+
 

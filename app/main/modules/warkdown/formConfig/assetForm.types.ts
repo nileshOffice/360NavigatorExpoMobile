@@ -52,6 +52,55 @@ export type AssetForm = {
   };
 };
 
+export type UpdatedAssetForm = {
+  general: {
+    originalAssetName: string;
+    updatedAssetName: string;
+  };
+
+  location: {
+    originalLocation: SelectOption | null;
+    updatedLocation: SelectOption | null;
+
+    // area: SelectOption | null;
+  };
+
+  classification: {
+    originalAssetType: SelectOption | null;
+    updatedAssetType: SelectOption | null;
+    originalAssetClass: SelectOption | null;
+    updatedAssetClass: SelectOption | null;
+    // priority: SelectOption | null;
+    originalSerialNumber: string;
+    updatedSerialNumber: string;
+    // workGroup: SelectOption | null;
+  };
+
+  technical: {
+    originalManufacturer: SelectOption | null;
+    updatedManufacturer: SelectOption | null;
+    originalModel: string;
+    updatedModel: string;
+    originalInstalledDate: string | null;
+    updatedInstalledDate: string | null;
+    // vendor: SelectOption | null;
+  };
+
+  // financial: {
+  //   purchasePrice: string;
+  //   failureClass: SelectOption | null;
+  //   criticality: SelectOption | null;
+  // };
+
+  // lifecycle: {
+  //   endOfLife: string | null;
+  // };
+
+  custom: {
+    uploadePhotos: AssetImage[];
+  };
+};
+
 export type AssetSection =
   | "general"
   | "location"
@@ -67,7 +116,7 @@ export type AssetField = {
   apiFieldName: string;
   label: string;
   category: number;
-  section: AssetSection;
+  // section: AssetSection;
   flag: number;
   isMandatory: boolean;
   suggested: any;

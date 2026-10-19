@@ -1,4 +1,9 @@
-import { AssetForm, AssetSection } from "./assetForm.types";
+import { AssetColumn } from "../api/walkdownApi.types";
+import {
+  AssetForm,
+  AssetSection,
+  UpdatedAssetForm
+} from "./assetForm.types";
 
 export const initialAssetForm: AssetForm = {
   general: {
@@ -38,6 +43,160 @@ export const initialAssetForm: AssetForm = {
   custom: {
     uploadePhotos: [],
   },
+};
+
+export const initialUpdatedAssetForm: UpdatedAssetForm = {
+  general: {
+    originalAssetName: "",
+    updatedAssetName: "",
+  },
+
+  location: {
+    originalLocation: null,
+    updatedLocation: null,
+    // area: null,
+  },
+
+  classification: {
+    originalAssetType: null,
+    updatedAssetType: null,
+    originalAssetClass: null,
+    updatedAssetClass: null,
+    // priority: null,
+    originalSerialNumber: "",
+    updatedSerialNumber: "",
+    // workGroup: null,
+  },
+
+  technical: {
+    originalManufacturer: null,
+    updatedManufacturer: null,
+    originalModel: "",
+    updatedModel: "",
+    originalInstalledDate: null,
+    updatedInstalledDate: null,
+    // vendor: null,
+  },
+
+  // financial: {
+  //   purchasePrice: "",
+  //   failureClass: null,
+  //   criticality: null,
+  // },
+
+  // lifecycle: {
+  //   endOfLife: null,
+  // },
+
+  custom: {
+    uploadePhotos: [],
+  },
+};
+const findField = (fields: AssetColumn[], fieldName: string) => {
+  return fields.find(
+    (item) => item?.aXColunmName?.toLowerCase() === fieldName.toLowerCase(),
+  );
+};
+
+export const mapSelectedAssetUpdatedToForm = (
+  apiData: AssetColumn[],
+): UpdatedAssetForm => {
+  const assetName = findField(apiData, "AX_AssetName");
+  const location = findField(apiData, "AX_Location");
+
+  const assetType = findField(apiData, "AX_AssetType");
+  const assetClass = findField(apiData, "AX_AssetClass");
+  const serialNumber = findField(apiData, "AX_SerialNum");
+
+  const manufacturer = findField(apiData, "AX_Manufacturer");
+  const model = findField(apiData, "AX_MakeModel");
+  const installedDate = findField(apiData, "AX_InstalledDate");
+
+  return {
+    general: {
+      originalAssetName: assetName?.aXColunmNameData ?? "",
+
+      updatedAssetName: assetName?.colunmNameData ?? "",
+    },
+
+    location: {
+      originalLocation: location?.aXColunmNameData
+        ? {
+            id: location.aXColunmNameData,
+            name: location.aXColunmNameData,
+          }
+        : null,
+
+      updatedLocation: location?.colunmNameData
+        ? {
+            id: location.colunmNameData,
+            name: location.colunmNameData,
+          }
+        : null,
+    },
+
+    classification: {
+      originalAssetType: assetType?.aXColunmNameData
+        ? {
+            id: assetType.aXColunmNameData,
+            name: assetType.aXColunmNameData,
+          }
+        : null,
+
+      updatedAssetType: assetType?.colunmNameData
+        ? {
+            id: assetType.colunmNameData,
+            name: assetType.colunmNameData,
+          }
+        : null,
+
+      originalAssetClass: assetClass?.aXColunmNameData
+        ? {
+            id: assetClass.aXColunmNameData,
+            name: assetClass.aXColunmNameData,
+          }
+        : null,
+
+      updatedAssetClass: assetClass?.colunmNameData
+        ? {
+            id: assetClass.colunmNameData,
+            name: assetClass.colunmNameData,
+          }
+        : null,
+
+      originalSerialNumber: serialNumber?.aXColunmNameData ?? "",
+
+      updatedSerialNumber: serialNumber?.colunmNameData ?? "",
+    },
+
+    technical: {
+      originalManufacturer: manufacturer?.aXColunmNameData
+        ? {
+            id: manufacturer.aXColunmNameData,
+            name: manufacturer.aXColunmNameData,
+          }
+        : null,
+
+      updatedManufacturer: manufacturer?.colunmNameData
+        ? {
+            id: manufacturer.colunmNameData,
+            name: manufacturer.colunmNameData,
+          }
+        : null,
+
+      originalModel: model?.aXColunmNameData ?? "",
+
+      updatedModel: model?.colunmNameData ?? "",
+
+      originalInstalledDate: installedDate?.aXColunmNameData ?? null,
+
+      updatedInstalledDate: installedDate?.colunmNameData ?? null,
+    },
+
+    custom: {
+      uploadePhotos: [],
+    },
+  };
 };
 
 export type AssetField = {

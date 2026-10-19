@@ -1,5 +1,6 @@
+import { ObjectImagelist } from "@/app/common/constants/imagelist_model";
 import { api as baseApi } from "@/app/lib/api/baseApi";
-import { AssetColumn, AssetWalkDownActivity, IdDto, IdDto1 } from "./walkdownApi.types";
+import { AssetColumn, AssetWalkDownActivity, IdDto, IdDto1, ImageIdto } from "./walkdownApi.types";
 
 type LocationHierarchyResponse = any[]
     | {
@@ -35,12 +36,27 @@ export interface SaveAssetWalkDownDetailsRequest {
   id24: number;
 }
 
+export interface UpdateAssetWalkDownDetailsRequest {
+  id21: number;
+  id22: number;
+  id23: number;
+  id: string;
+  id24: number;
+}
+
 export interface InsertAssetDocumentsRequest {
   id32: number;
   id21: number;
   id67: string;
   idArrayStr: string[];
   id22: number;
+}
+
+
+
+export interface GetFileListByObjectIdRequest {
+    id: number | string;
+    
 }
 
 
@@ -105,11 +121,27 @@ export const worlkdownApi = baseApi.injectEndpoints({
             }),
         }),
 
+        updateAssetWalkDownDetails: builder.mutation<any, UpdateAssetWalkDownDetailsRequest>({
+            query: (payload) => ({
+                url: "/api/dqa/updateAssetWalkDownDetails",
+                method: "POST",
+                body: payload,
+            }),
+        }),
+
         insertAssetDocuments: builder.mutation< any,InsertAssetDocumentsRequest>({
             query: (payload) => ({
                 url: "/api/pmo/insertAssetDocuments",
                 method: "POST",
                 body: payload,
+            }),
+        }),
+
+        getFileListByObjectId: builder.query<ObjectImagelist[], ImageIdto>({
+            query: (idDto) => ({
+                url: "/api/cmn/getFileListByObjectId",
+                method: "POST",
+                body: idDto,
             }),
         }),
 
@@ -127,5 +159,7 @@ export const {
     // useGetMasterDataUpdateAssetInformationQuery,
     useLazyGetMasterDataUpdateAssetInformationQuery,
     useSaveAssetWalkDownDetailsMutation,
-    useInsertAssetDocumentsMutation
+    useUpdateAssetWalkDownDetailsMutation,
+    useInsertAssetDocumentsMutation,
+    useLazyGetFileListByObjectIdQuery
 } = worlkdownApi;

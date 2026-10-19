@@ -1,6 +1,7 @@
-import React, { forwardRef, useState } from "react";
+import { forwardRef, useState } from "react";
 import {
   ActivityIndicator,
+  Pressable,
   Text,
   TextInput,
   View,
@@ -14,6 +15,7 @@ const Input = forwardRef<TextInput, InputProps>(
     {
       label,
       required,
+      onRightIconPress,
       error,
       helperText,
       leftIcon,
@@ -27,6 +29,7 @@ const Input = forwardRef<TextInput, InputProps>(
       onFocus,
       onBlur,
       ...props
+      
     },
     ref
   ) => {
@@ -87,7 +90,11 @@ const Input = forwardRef<TextInput, InputProps>(
           {loading ? (
             <ActivityIndicator size="small" color="#2563EB" />
           ) : (
-            rightIcon && <View className="ml-3">{rightIcon}</View>
+            rightIcon && <View className="ml-3">
+              <Pressable onPress={onRightIconPress}>
+  {rightIcon}
+</Pressable>
+            </View>
           )}
         </View>
 

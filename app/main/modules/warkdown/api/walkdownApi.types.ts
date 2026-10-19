@@ -133,15 +133,23 @@ export interface AssetColumn {
   aXColunmName: string;
   aXColunmNameData: string | null;
   assetnum: string | null;
-  category: number;
-  colorIndicator: number;
+  category: number | null;
+  colorIndicator: number | null;
   colunmName: string;
   colunmNameData: string | null;
   displayColnumName: string;
-  displayOrder: number;
-  flag: number;
-  id: number;
-  isMandatory: number;
+  displayOrder: number | null;
+  flag: number | null;
+  id: number | null;
+  isMandatory: number | null;
+  note: string | null;
   suggested: string | null;
   suggestedname: string | null;
+}
+
+export interface ImageIdto {
+  id: string;
+  id21: number;
+  id22: number;
+  id23: number;
 }

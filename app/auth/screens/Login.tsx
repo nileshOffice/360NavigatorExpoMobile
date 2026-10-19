@@ -3,16 +3,18 @@ import AppIcon from '@/app/common/components/ui/AppIcon';
 import AppBottomSheet from '@/app/common/components/ui/bottom_sheet';
 import Button from '@/app/common/components/ui/Button/Button';
 import Input from '@/app/common/components/ui/Input/Input';
+import KeyboardAvoidingWrapper from '@/app/common/components/ui/KeyboardAvoidingWrapper';
 import { AppText } from '@/app/common/components/ui/Typography';
 import Heading from '@/app/common/components/ui/Typography/Heading';
 import { APP_ROUTES } from '@/app/common/config/routes';
 import Screen from '@/app/common/layouts/Screen';
 import { cryptoService } from '@/app/lib/services/crypto/cryptoService';
 import { useAppDispatch } from '@/app/lib/store/hooks';
+import { togglePasswordVisibility } from '@/app/utils/passwordUtils';
 import CompanyLogo from '@/assets/images/360Nav_logo.svg';
 import LoginBottom from '@/assets/images/loginVectorBottom.svg';
 import { useRouter } from 'expo-router';
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { View } from 'react-native';
 import type { LoginResponse } from '../auth.types';
 import { useLoginMutation, useStartNewSessionForUserMutation } from '../authApi';
@@ -33,6 +35,15 @@ const Login = () => {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isLoginConfirmationVisible, setIsLoginConfirmationVisible] = useState(false);
   const router = useRouter();
+
+
+   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
+
+  const handleTogglePassword = () => {
+    setIsPasswordVisible((prev) =>
+      togglePasswordVisibility(prev)
+    );
+  };
 
 
   const login = async () => {
@@ -79,7 +90,6 @@ const Login = () => {
       currentUser.isLoggedIn === 1 ||
       currentUser.isLoggedIn === 'true';
 
-    console.log('Login successful:', response);
 
     if (isLoggedIn) {
       dispatch(
@@ -156,7 +166,13 @@ const Login = () => {
 
   return (
     <Screen className="flex-1">
+       <KeyboardAvoidingWrapper
+        contentContainerStyle={{
+        
+        }}  >
       <View className="flex-1 gap-y-4" style={{ zIndex: 1 }}>
+        
+    
         <View className="items-center  max-w-2xl my-2" >
           <CompanyLogo width={230} height={56} />
           <AppText variant="body" className="text-center text-text-secondary ">
@@ -186,8 +202,16 @@ const Login = () => {
             label="Password"
             value={logInForm.password}
             onChangeText={(text) => setLogInForm((prev) => ({ ...prev, password: text }))}
-            rightIcon={<AppIcon family="Feather" name="eye" size={20} color="#000000" />}
-            secureTextEntry
+           rightIcon={
+          <AppIcon
+            family="Feather"
+            name={isPasswordVisible ? "eye-off" : "eye"}
+            size={20}
+            color="#000000"
+          />
+        }
+        onRightIconPress={handleTogglePassword}
+        secureTextEntry={!isPasswordVisible}
           />
         </View>
 
@@ -211,13 +235,7 @@ const Login = () => {
         </Button> */}
       </View>
 
-      <View
-        pointerEvents="none"
-        className="absolute -bottom-7 -left-6 -right-6"
-        style={{ zIndex: 0 }}
-      >
-        <LoginBottom width="100%" height={96} preserveAspectRatio="xMidYMid slice" />
-      </View>
+     
 
       <AppBottomSheet
         visible={isLoginConfirmationVisible}
@@ -257,6 +275,14 @@ const Login = () => {
         </View>
         
       </AppBottomSheet>
+      </KeyboardAvoidingWrapper>
+       <View
+        pointerEvents="none"
+        className="absolute -bottom-7 -left-6 -right-6"
+        style={{ zIndex: 0 }}
+      >
+        <LoginBottom width="100%" height={96} preserveAspectRatio="xMidYMid slice" />
+      </View>
     </Screen>
   );
 
