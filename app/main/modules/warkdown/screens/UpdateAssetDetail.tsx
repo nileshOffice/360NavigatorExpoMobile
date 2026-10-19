@@ -28,7 +28,6 @@ import AppStepper from '@/app/common/components/ui/AppStepper';
 import AppTreeView from '@/app/common/components/ui/AppTreeView';
 import AppBottomSheet from '@/app/common/components/ui/bottom_sheet';
 import { Modules } from '@/app/common/constants/global_enum';
-import { useNavigation } from "@react-navigation/native";
 import AssetSelectionDrawer from '../components/AssetSelectionDrawer';
 import CalculateAssetEcr from '../components/CalculateAssetEcr';
 import {
@@ -46,7 +45,6 @@ const UpdateAssetDetail = () => {
   const selectedListHeight = Math.max(280, screenHeight - 310)
   const dispatch = useAppDispatch();
   const { currentUser, selectedSite } = useAppSelector((state) => state.auth);
-  const navigation = useNavigation();
 
 
 
