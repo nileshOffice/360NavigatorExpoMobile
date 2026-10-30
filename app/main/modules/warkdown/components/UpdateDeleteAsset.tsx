@@ -5,6 +5,7 @@ import Button from '@/app/common/components/ui/Button/Button';
 import { AppText } from '@/app/common/components/ui/Typography';
 import { APP_ROUTES } from '@/app/common/config/routes';
 import { Modules } from '@/app/common/constants/global_enum';
+import { resetHeader, setHeader } from '@/app/common/hooks/headerSlice';
 import { useAppDispatch, useAppSelector } from '@/app/lib/store/hooks';
 import { RootState } from '@/app/lib/store/store';
 import { useCallback, useEffect, useMemo, useRef } from 'react';
@@ -27,6 +28,24 @@ const UpdateDeleteAsset = () => {
 
 
     console.log('selectedAssetData', assetForm)
+
+    useEffect(() => {
+
+        dispatch(
+            setHeader({
+                title: 'Submit Asset',
+                showBack: true,
+                showMenu: false,
+                showLogo: false,
+                backAction: 'goBack',
+            })
+        );
+
+        return () => {
+            dispatch(resetHeader());
+        };
+
+    }, [dispatch]);
 
 
     // =========================================================

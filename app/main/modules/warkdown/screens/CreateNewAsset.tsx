@@ -6,7 +6,7 @@ import AppBottomSheet from "@/app/common/components/ui/bottom_sheet";
 import Screen from "@/app/common/layouts/Screen";
 import { useAppDispatch, useAppSelector } from "@/app/lib/store/hooks";
 import { RootState } from "@/app/lib/store/store";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, Image, ScrollView, useWindowDimensions, View } from "react-native";
 import {
   useGetAssetUpdateFieldByClientsQuery,
@@ -28,9 +28,10 @@ import {
 
 import AppDatePicker from "@/app/common/components/ui/AppDatePicker";
 import AppStepper from "@/app/common/components/ui/AppStepper";
-import ImageUpload from "@/app/common/components/ui/ImageUpload";
+import ImageUpload from "@/app/common/components/ui/UploadSection/ImageUpload";
 import { useToast } from "@/app/common/components/ui/toast";
 import { APP_ROUTES } from "@/app/common/config/routes";
+import { resetHeader, setHeader } from "@/app/common/hooks/headerSlice";
 import { formatDateForStorage, parseStoredDate } from "@/app/lib/utils";
 import { buildAssetDataString } from "@/app/utils/assetPayload";
 import { buildLocationTree } from "@/app/utils/locationTreeUtils";
@@ -99,6 +100,49 @@ const CreateNewAsset = () => {
    const selectedActivity = useAppSelector(
           state => state.assetWalkDown.selectedActivity
       );
+
+
+  
+  useEffect(() => {
+    dispatch(
+      setHeader({
+        title: 'Add Asset',
+        showBack: true,
+        showMenu: false,
+        showLogo: false,
+        backAction: 'custom',
+      })
+    );
+
+    return () => {
+      dispatch(resetHeader());
+    };
+  }, [dispatch]);
+  
+
+   const headerBackPressed = useAppSelector(
+        (state) => state.header.backPressed
+    );
+
+
+
+
+          
+
+
+  
+      useEffect(() => {
+        if (headerBackPressed === 0) {
+          return;
+        }
+
+        handleBack();
+
+      }, [headerBackPressed]);
+  
+
+
+
   // =========================================================
   // ASSET FIELD API DTO
   // =========================================================
@@ -188,8 +232,7 @@ const formFields = useMemo<AssetField[]>(() => {
     return [];
   }
 
-  const dynamicFields: AssetField[] = myAssetUpdateFields
-    .map((item: any) => {
+  const dynamicFields: AssetField[] = myAssetUpdateFields.map((item: any) => {
       const fieldName = apiFieldMap[item.aXColunmName];
 
       const section = categorySectionMap[item.category];

@@ -1,5 +1,5 @@
-import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { Site, User } from './auth.types';
+import { createSlice, PayloadAction } from "@reduxjs/toolkit";
+import { Site, User } from "./auth.types";
 
 interface AuthState {
   currentUser: User | null;
@@ -10,9 +10,8 @@ interface AuthState {
   lastVisitedRoute: string | null;
   selectedSite: Site | null;
   sessionExpired: boolean;
-  siteSelectionOpen:boolean;
+  siteSelectionOpen: boolean;
   safetyAcknowledged: boolean;
-
 }
 
 const initialState: AuthState = {
@@ -24,12 +23,12 @@ const initialState: AuthState = {
   lastVisitedRoute: null,
   selectedSite: null,
   sessionExpired: false,
-  siteSelectionOpen:false,
-  safetyAcknowledged:false,
+  siteSelectionOpen: false,
+  safetyAcknowledged: false,
 };
 
 const authSlice = createSlice({
-  name: 'auth',
+  name: "auth",
   initialState,
 
   reducers: {
@@ -40,7 +39,7 @@ const authSlice = createSlice({
         isCompanySelectedByUser?: boolean;
         isSiteSelectedByUser?: Site;
         visitFlag?: boolean;
-      }>
+      }>,
     ) => {
       if (action.payload.currentUser) {
         state.currentUser = {
@@ -50,13 +49,11 @@ const authSlice = createSlice({
       }
 
       if (action.payload.isCompanySelectedByUser !== undefined) {
-        state.isCompanySelectedByUser =
-          action.payload.isCompanySelectedByUser;
+        state.isCompanySelectedByUser = action.payload.isCompanySelectedByUser;
       }
 
       if (action.payload.isSiteSelectedByUser !== undefined) {
-        state.isSiteSelectedByUser =
-          action.payload.isSiteSelectedByUser;
+        state.isSiteSelectedByUser = action.payload.isSiteSelectedByUser;
       }
 
       if (action.payload.visitFlag !== undefined) {
@@ -65,12 +62,6 @@ const authSlice = createSlice({
 
       state.isAuthenticated = true;
     },
-
-   
-    setSessionExpired: (state, action: PayloadAction<boolean>) => {
-      state.sessionExpired = action.payload;
-    },
-
 
     setCompanySelectedByUser: (state, action: PayloadAction<any>) => {
       state.isCompanySelectedByUser = action.payload;
@@ -92,15 +83,17 @@ const authSlice = createSlice({
       state.selectedSite = action.payload;
     },
 
-     setSiteSelectionOpen: (state, action: PayloadAction<boolean>) => {
+    setSiteSelectionOpen: (state, action: PayloadAction<boolean>) => {
       state.siteSelectionOpen = action.payload;
     },
 
-      setSafetyAcknowledged: (state, action) => {
-            state.safetyAcknowledged = action.payload;
-        },
+    setSafetyAcknowledged: (state, action) => {
+      state.safetyAcknowledged = action.payload;
+    },
 
-   
+    setSessionExpired: (state, action: PayloadAction<boolean>) => {
+      state.sessionExpired = action.payload;
+    },
 
     logout: (state) => {
       state.currentUser = null;
@@ -112,7 +105,7 @@ const authSlice = createSlice({
       state.selectedSite = null;
       state.safetyAcknowledged = false;
     },
-  }
+  },
 });
 
 export const {

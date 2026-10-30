@@ -6,13 +6,14 @@ import { AppText } from '@/app/common/components/ui/Typography';
 import Heading from '@/app/common/components/ui/Typography/Heading';
 import { APP_ROUTES } from '@/app/common/config/routes';
 import { Roles } from '@/app/common/constants/global_enum';
+import { resetHeader, setHeader } from '@/app/common/hooks/headerSlice';
 import Screen from '@/app/common/layouts/Screen';
 import { setModuleList } from '@/app/common/redux/homeSlice/moduleSlice';
 import { getErrorStatus } from '@/app/common/utils/errorHandler';
 import { useAppDispatch, useAppSelector } from '@/app/lib/store/hooks';
 import { RootState } from '@/app/lib/store/store';
 import { useRouter } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Alert, View } from 'react-native';
 import { useSelector } from 'react-redux';
 import ModuleList from './ModuleList';
@@ -48,6 +49,26 @@ const Home = () => {
   const selectedSite = useSelector(
   (state: RootState) => state.auth.selectedSite
 );
+
+
+
+    useEffect(() => {
+
+      dispatch(
+        setHeader({
+          title: '',
+          showBack: false,
+          showMenu: true,
+          showLogo: false,
+          backAction: 'goBack',
+        })
+      );
+
+      return () => {
+        dispatch(resetHeader());
+      };
+
+    }, [dispatch]);
 
 
   const [

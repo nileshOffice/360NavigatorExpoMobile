@@ -1,7 +1,6 @@
 import AppDatePicker from '@/app/common/components/ui/AppDatePicker';
 import AppIcon, { IconFamily } from '@/app/common/components/ui/AppIcon';
 import Button from "@/app/common/components/ui/Button/Button";
-import ImageUpload from '@/app/common/components/ui/ImageUpload';
 import { useToast } from '@/app/common/components/ui/toast/ToastProvider';
 import { AppText, Heading } from '@/app/common/components/ui/Typography';
 import { APP_ROUTES } from '@/app/common/config/routes';
@@ -9,11 +8,10 @@ import Screen from "@/app/common/layouts/Screen";
 import { useAppDispatch, useAppSelector } from '@/app/lib/store/hooks';
 import { RootState } from '@/app/lib/store/store';
 import { formatDateForStorage, parseStoredDate } from '@/app/lib/utils';
-import { buildAssetDataString } from '@/app/utils/assetPayload';
 import { buildLocationTree } from '@/app/utils/locationTreeUtils';
 import { router } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Image, ScrollView, useWindowDimensions, View } from 'react-native';
+import { ActivityIndicator, Alert, Image, ScrollView, useWindowDimensions, View } from 'react-native';
 import {
   useGetAssetUpdateFieldByClientsQuery, useGetClientClassStructureDataQuery, useGetLocationHierarchyBySidIdQuery, useInsertAssetDocumentsMutation,
   useLazyGetFileListByObjectIdQuery,
@@ -27,7 +25,10 @@ import { apiFieldMap, AssetField, assetStepConfig, categorySectionMap } from '..
 import AppStepper from '@/app/common/components/ui/AppStepper';
 import AppTreeView from '@/app/common/components/ui/AppTreeView';
 import AppBottomSheet from '@/app/common/components/ui/bottom_sheet';
+import ImageUpload from '@/app/common/components/ui/UploadSection/ImageUpload';
+import { useUploadToFolder } from '@/app/common/components/ui/UploadSection/uploadFilesToRootFolder';
 import { Modules } from '@/app/common/constants/global_enum';
+import { resetHeader, setHeader } from '@/app/common/hooks/headerSlice';
 import AssetSelectionDrawer from '../components/AssetSelectionDrawer';
 import CalculateAssetEcr from '../components/CalculateAssetEcr';
 import {
@@ -45,9 +46,6 @@ const UpdateAssetDetail = () => {
   const selectedListHeight = Math.max(280, screenHeight - 310)
   const dispatch = useAppDispatch();
   const { currentUser, selectedSite } = useAppSelector((state) => state.auth);
-
-
-
 
   // =========================================================
     // REDUX
@@ -74,13 +72,27 @@ const UpdateAssetDetail = () => {
   const selectedActivity = useAppSelector(
     state => state.assetWalkDown.selectedActivity
   );
+  const [fileFormatErrorMessage, setFileFormatErrorMessage] = useState(false)
 
  
   const selectedAssetData = useAppSelector(
     state => state.selectedAssetData
   );
 
+
+
+
+
+
+  useEffect(() => {
+    if (!selectedAssetData?.id) return;
+
+    // Hydrate original + updated values here
+  }, [selectedAssetData?.id]);
+
   console.log("selectedAssetData", selectedAssetData)
+
+  console.log("module", currentUser)
 
 
   const normalizeValue = (value: any) => {
@@ -121,6 +133,8 @@ const UpdateAssetDetail = () => {
     isFetching: isFieldsFetching,
     isError: isFieldsError,
   } = useGetAssetUpdateFieldByClientsQuery(fieldApiDto);
+
+  console.log("assetUpdatedFields" , myAssetUpdateFields)
 
 
    // =========================================================
@@ -168,7 +182,59 @@ const UpdateAssetDetail = () => {
         isLoading: isUploadingImages,
       },
     ] = useInsertAssetDocumentsMutation();
-   
+
+
+
+
+
+ 
+  const {uploadToFolder,isLoading: isUploading,} = useUploadToFolder();
+
+const uploadAssetImages = async () => {
+  try {
+    const uploadedPhotos =
+      assetForm?.updateAssetForm?.custom?.uploadePhotos ?? [];
+
+    if (!uploadedPhotos.length) {
+      return [];
+    }
+
+    // 1. Upload images using reusable hook
+    const uploadedFilePaths = await uploadToFolder({
+      files: uploadedPhotos,
+      companyCode: currentUser?.companyCode ?? "",
+      folderType: "PMO/Asset",
+      objectId: "0",
+      fileFlag: "I",
+    });
+
+    console.log("Uploaded files:", uploadedFilePaths);
+
+    // 2. Extract file paths
+    const imageList = uploadedFilePaths
+      .map((file) => file.filePath)
+      .filter((path): path is string => Boolean(path));
+
+    // 3. Save uploaded paths against asset
+    if (imageList.length) {
+      const imagePayload = {
+        id32: Number(currentUser?.userId),
+        id21: Number(selectedAssetData?.id),
+        id67: "A",
+        idArrayStr: imageList,
+        id22: 0,
+      };
+
+      await insertAssetDocuments(imagePayload).unwrap();
+    }
+
+    return uploadedFilePaths;
+
+  } catch (error) {
+    console.error("Asset image upload failed:", error);
+    throw error;
+  }
+};
 
 
 
@@ -180,7 +246,37 @@ const UpdateAssetDetail = () => {
       isFetching: isUploadedImagesFetching,
     },
   ] = useLazyGetFileListByObjectIdQuery();
+
+
+
+
   const hydratedImagesAssetId = useRef<number | null>(null);
+
+  
+    useEffect(() => {
+      dispatch(
+        setHeader({
+          title: 'Update Asset',
+          showBack: true,
+          showMenu: false,
+          showLogo: false,
+          backAction: 'custom',
+        })
+      );
+
+      return () => {
+        dispatch(resetHeader());
+      };
+    }, [dispatch]);
+
+    const headerBackPressed = useAppSelector(
+      (state) => state.header.backPressed
+    );
+
+
+
+
+
 
   useEffect(() => {
     if (!selectedAssetData?.id) return;
@@ -195,6 +291,8 @@ const UpdateAssetDetail = () => {
   }, [selectedAssetData?.id, getFileListByObjectId])
 
   useEffect(() => {
+
+
     if (!selectedAssetData?.id || !uploadedImages) return;
     if (hydratedImagesAssetId.current === selectedAssetData.id) return;
     hydratedImagesAssetId.current = selectedAssetData.id;
@@ -518,13 +616,13 @@ const UpdateAssetDetail = () => {
 
           <View
             className={`rounded-full border px-2 py-1 ${isChanged
-                ? "border-blue-200 bg-blue-50"
-                : "border-green-200 bg-green-50"
+                ? "border-green-200 bg-green-50"
+                : "border-blue-200 bg-blue-50"
               }`}
           >
             <AppText
               variant="bodySmall"
-              className={isChanged ? "text-blue-700!" : "text-green-700!"}
+              className={isChanged ? " text-green-700!" : "text-blue-700!"}
             >
               {isChanged ? "Changed" : "Unchanged"}
             </AppText>
@@ -533,7 +631,7 @@ const UpdateAssetDetail = () => {
 
         {/* Original and updated comparison */}
         <View
-          className={`flex-row rounded-lg p-3 ${isChanged ? "bg-blue-50" : "bg-slate-100"
+          className={`flex-row rounded-lg p-3 ${isChanged ? "bg-slate-100" : " bg-blue-50"
             }`}
         >
           <View className="w-1/2 border-r border-slate-200 pr-3">
@@ -549,7 +647,7 @@ const UpdateAssetDetail = () => {
           <View className="w-1/2 pl-3">
             <AppText
               variant="caption"
-              className={isChanged ? "text-blue-600!" : "text-green-700!"}
+              className={isChanged ? " text-green-700!" : "text-blue-600!"}
             >
               New value (Current)
             </AppText>
@@ -1243,8 +1341,8 @@ const UpdateAssetDetail = () => {
 
                                           <View
                                             className={`rounded-3xl border px-3 py-1 ${isChanged
-                                                ? "border-blue-200 bg-blue-100"
-                                                : "border-green-200 bg-green-100"
+                                                ? "border-green-200 bg-green-100 "
+                                                : "  border-blue-200 bg-blue-100"
                                               }`}
                                           >
                                             <AppText
@@ -1252,8 +1350,8 @@ const UpdateAssetDetail = () => {
                                               weight="medium"
                                               className={
                                                 isChanged
-                                                  ? "text-blue-800!"
-                                                  : "text-green-800!"
+                                                  ? "text-green-800!"
+                                                  : " text-blue-800!"
                                               }
                                             >
                                               {isChanged ? "Changed" : "Unchanged"}
@@ -1263,7 +1361,7 @@ const UpdateAssetDetail = () => {
 
                                         {/* Original and Updated side by side */}
                                         <View
-                                          className={`flex-row rounded-lg p-3 ${isChanged ? "bg-blue-50" : "bg-slate-100"
+                                          className={`flex-row rounded-lg p-3 ${isChanged ? "bg-slate-100" : " bg-blue-50"
                                             }`}
                                         >
                                           {/* Original */}
@@ -1288,8 +1386,8 @@ const UpdateAssetDetail = () => {
                                               variant="caption"
                                               className={
                                                 isChanged
-                                                  ? "text-blue-600!"
-                                                  : "text-green-700!"
+                                                  ? "text-green-700! "
+                                                  : " text-blue-600!"
                                               }
                                             >
                                               New value (Current)
@@ -1298,8 +1396,8 @@ const UpdateAssetDetail = () => {
                                             <AppText
                                               className={
                                                 isChanged
-                                                  ? "mt-1 font-semibold text-blue-800"
-                                                  : "mt-1 text-slate-800"
+                                                  ? "mt-1 font-semibold text-slate-800"
+                                                  : "mt-1  text-blue-800"
                                               }
                                             >
                                               {updatedDisplay}
@@ -1365,39 +1463,169 @@ const UpdateAssetDetail = () => {
             // CONTINUE
             // =========================================================
           
-            const handleContinue = useCallback(() => {
-              if (currentStep < totalSteps - 1) {
-                setCurrentStep((previous) => previous + 1);
-                return;
-              }
-          
-              if (!isReviewMode) {
-                setIsReviewMode(true);
-                return;
-              }
-          
-              if (!isAssetNameValid) {
-                return;
-              }
-          
-              setIsCreateAssetConfirmationVisible(true);
-            }, [currentStep, isAssetNameValid, isReviewMode, totalSteps]);
-          
+          const handleContinue = useCallback(() => {
+            if (currentStep < totalSteps - 1) {
+              setCurrentStep((previous) => previous + 1);
+              return;
+            }
+
+            if (!isReviewMode) {
+              setIsReviewMode(true);
+              return;
+            }
+
+            if (!isAssetNameValid) {
+              return;
+            }
+
+            setIsCreateAssetConfirmationVisible(true);
+          }, [currentStep, isAssetNameValid, isReviewMode, totalSteps]);
+
+          // =========================================================
+          // BACK
+          // =========================================================
+
+        const goToPreviousScreen = useCallback(() => {
+          if (router.canGoBack()) {
+            router.back();
+          } else {
+            router.replace(APP_ROUTES.assetAssignment);
+          }
+        }, [router]);
+
+          const hasFormChanges = useMemo(() => {
             // =========================================================
-            // BACK
+            // CHECK NORMAL FORM FIELDS
             // =========================================================
-          
-            const handleBack = useCallback(() => {
-              if (isReviewMode) {
-                setIsReviewMode(false);
-                return;
+
+            const fieldChanged = formFields.some((field) => {
+
+              if (field.section === 'custom') {
+                return false;
               }
-          
-              if (currentStep > 0) {
-                setCurrentStep((previous) => previous - 1);
+
+              const original = getDisplayValue(
+                getOriginalFieldValue(field)
+              );
+
+              const updated = getDisplayValue(
+                getFieldValue(field)
+              );
+
+              return (
+                normalizeValue(original) !==
+                normalizeValue(updated)
+              );
+            });
+
+            if (fieldChanged) {
+              return true;
+            }
+
+            // =========================================================
+            // CHECK IMAGES
+            // =========================================================
+
+            const originalImages =
+              assetForm?.updateAssetForm?.custom?.uploadePhotos ?? [];
+
+            const updatedImages =
+              assetForm?.updateAssetForm?.custom?.uploadePhotos ?? [];
+
+            // Different number of images
+            if (originalImages.length !== updatedImages.length) {
+              return true;
+            }
+
+            // Compare image URI/path
+            const imagesChanged = originalImages.some(
+              (originalImage, index) => {
+
+                const updatedImage = updatedImages[index];
+
+                return (
+                  originalImage?.uri !== updatedImage?.uri
+                );
               }
-            }, [currentStep, isReviewMode]);
-          
+            );
+
+            if (imagesChanged) {
+              return true;
+            }
+
+            return false;
+
+          }, [
+            formFields,
+            assetForm,
+          ]);
+
+
+          const handleBack = useCallback(() => {
+
+            // Review → previous step
+            if (isReviewMode) {
+              setIsReviewMode(false);
+              return;
+            }
+
+            // Step 3 → Step 2
+            // Step 2 → Step 1
+            if (currentStep > 0) {
+              setCurrentStep((previous) => previous - 1);
+              return;
+            }
+
+            // Step 1 → leave screen
+            if (hasFormChanges) {
+
+              Alert.alert(
+                'Discard Changes?',
+                'You have edited the asset information. If you go back, your changes will be reset.',
+                [
+                  {
+                    text: 'Cancel',
+                    style: 'cancel',
+                  },
+                  {
+                    text: 'Discard',
+                    style: 'destructive',
+                      onPress: () => {
+                        dispatch(resetAssetForm());
+                        goToPreviousScreen();
+                    },
+                  },
+                ],
+              );
+
+              return;
+            }
+
+            // No changes
+             goToPreviousScreen();
+
+          }, [
+            currentStep,
+            isReviewMode,
+            hasFormChanges,
+            dispatch,
+            router,
+          ]);
+
+
+
+          useEffect(() => {
+            if (headerBackPressed === 0) {
+              return;
+            }
+
+            handleBack();
+
+          }, [headerBackPressed, handleBack]);
+
+
+
+       
             // =========================================================
             // CLOSE DRAWER
             // =========================================================
@@ -1411,86 +1639,183 @@ const UpdateAssetDetail = () => {
               setIsActiveListDrawer(false);
               setActiveField(null);
             }, []);
-          
+
+
+
+            const getAssetFieldValue = useCallback(
+              (columnName: string) => {
+                const form = assetForm?.updateAssetForm;
+
+                switch (columnName) {
+                  // --------------------------------
+                  // GENERAL
+                  // --------------------------------
+
+                  case "Name":
+                    return form?.general?.updatedAssetName ?? "";
+
+                  // --------------------------------
+                  // TECHNICAL
+                  // --------------------------------
+
+                  case "Manufacturer":
+                    return form?.technical?.updatedManufacturer?.name ?? "";
+
+                  case "MakeModel":
+                    return form?.technical?.updatedModel ?? "";
+
+                 
+
+                  case "InstalledDate":
+                    return form?.technical?.updatedInstalledDate ?? "";
+
+                  // --------------------------------
+                  // CLASSIFICATION
+                  // --------------------------------
+
+                  case "AssetType":
+                    return form?.classification?.updatedAssetType?.name ?? "";
+
+                  case "SerialNum":
+                    return form?.classification?.updatedSerialNumber ?? "";
+
+                  case "AssetClass":
+                    return form?.classification?.updatedAssetClass?.name ?? "";
+
+                 
+                  // --------------------------------
+                  // LOCATION
+                  // --------------------------------
+
+                  case "Location":
+                    return form?.location?.updatedLocation?.name ?? "";
+
+                
+                  // --------------------------------
+                  // DEFAULT
+                  // --------------------------------
+
+                  default:
+                    return "";
+                }
+              },
+              [assetForm]
+            );
           
           
             // ========================================================
-               //  Add New Asset
-          
-            const addNewAsset = useCallback(async () => {debugger
-              // Close confirmation modal
-              setIsCreateAssetConfirmationVisible(false);
-          
-              // Build final asset string
-              const finalString = buildAssetDataString({
-                assetName: assetForm?.updateAssetForm?.general.updatedAssetName,
-                location: assetForm?.updateAssetForm?.location.updatedLocation?.name,
-                assetType: assetForm?.updateAssetForm?.classification.updatedAssetType?.name,
-                assetClass: assetForm?.updateAssetForm?.classification.updatedAssetClass?.name,
-                serialNumber: assetForm?.updateAssetForm?.classification.updatedSerialNumber,
-                manufacturer: assetForm?.updateAssetForm?.technical.updatedManufacturer?.name,
-                model: assetForm?.updateAssetForm?.technical.updatedModel,
-                installedDate: assetForm?.updateAssetForm?.technical.updatedInstalledDate,
-              });
-          
-          
-            
-          
-              // Prepare API payload
-              const payload = {
-                id21: Number(currentUser?.userId),
-                id22: Number(currentUser?.siteId),
-                id23: Number(currentUser?.companyId),
-                id: finalString,
-                id24: Number(selectedActivity?.woId ?? 0),
-              };
-          
-          
-           
-              try {
-                const response = await updateAssetWalkDownDetails(payload).unwrap();
-          
-          
-                const uploadedPhotos = assetForm?.updateAssetForm?.custom?.uploadePhotos ?? [];
-                const imageList = uploadedPhotos.map((image) => ({
-                  filePath: image.uri,
-                }));
-          
-                // if (imageList.length > 0) {debugger
-                //   const imageResponse = await getUploadedFilePaths(imageList);
-                //   console.log("Image upload successful. Response:", imageResponse);
-                // }
-          
-                success({
-                  title: "Asset Updated",
-                  message: "Your asset has been updated.",
-                  duration: 5000,
-                });
-          
-                dispatch(resetAssetForm());
-                router.replace(APP_ROUTES.assetAssignment);
-              } catch (error) {
-                console.error(
-                  "Update asset error:",
-                  error
-                );
-          
-                danger({
-                  title: "Update Failed",
-                  message: "Unable to update asset. Please try again.",
-                  duration: 5000,
-                });
-              }
-            }, [
-              assetForm,
-              currentUser,
-              selectedActivity,
-              updateAssetWalkDownDetails,
-              success,
-              danger,
-              dispatch,
-            ]);
+             //  Update Asset
 
+                const updateSingleAssetField = async (
+                  field: typeof myAssetUpdateFields[number],
+                  assetId: string
+                ) => {
+                  const columnName =
+                    currentUser?.companyCode === "JNJ"
+                      ? field.aXColunmName
+                      : field.colunmName;
+
+                  const data = getAssetFieldValue(field.colunmName);
+
+                  const payload = {
+                    id21: Number(currentUser?.siteId),
+                    id: columnName,
+                    id1: data ?? "",
+                    id2: assetId,
+                    id22: Number(currentUser?.userId),
+                    id23: Modules.CMMSDataQuality,
+                    id24: 0,
+                    id25: 0,
+                    id3: "",
+                  };
+
+                  console.log("================================");
+                  console.log("COLUMN:", columnName);
+                  console.log("PAYLOAD:", JSON.stringify(payload, null, 2));
+
+                  try {
+                    const response =
+                      await updateAssetWalkDownDetails(payload).unwrap();
+
+                    console.log("✅ SUCCESS:", columnName);
+                    console.log("RESPONSE:", response);
+
+                    return {
+                      success: true,
+                      field: columnName,
+                    };
+
+                  } catch (error: any) {
+                    console.log("❌ ERROR:", columnName);
+                    console.log("STATUS:", error?.status);
+                    console.log("DATA:", error?.data);
+                    console.log("ERROR:", error?.error);
+                    console.log("FULL:", JSON.stringify(error, null, 2));
+
+                    return {
+                      success: false,
+                      field: columnName,
+                      error,
+                    };
+                  }
+                };
+
+              const updateNewAsset = useCallback(async () => {
+                setIsCreateAssetConfirmationVisible(false);
+
+                const assetId = String(selectedAssetData?.id ?? "").trim();
+
+                if (!assetId) {
+                  danger({
+                    title: "Update Failed",
+                    message: "Asset ID is missing.",
+                    duration: 5000,
+                  });
+                  return;
+                }
+
+                try {
+                  const results = [];
+
+                  for (const field of myAssetUpdateFields) {
+                    const result = await updateSingleAssetField(field, assetId);
+                    results.push(result);
+                  }
+
+                  console.log("FINAL RESULTS:", results);
+
+                  // Upload images
+                   await uploadAssetImages();
+
+                  // Don't show warning yet
+                  success({
+                    title: "Asset Updated",
+                    message: "Asset information and images updated successfully.",
+                    duration: 5000,
+                  });
+
+                  dispatch(resetAssetForm());
+                  router.replace(APP_ROUTES.assetAssignment);
+
+                } catch (error) {
+                  console.error("Update asset error:", error);
+
+                  danger({
+                    title: "Update Failed",
+                    message: "Unable to update asset. Please try again.",
+                    duration: 5000,
+                  });
+                }
+              }, [
+                myAssetUpdateFields,
+                selectedAssetData,
+                updateSingleAssetField,
+                uploadAssetImages,
+                success,
+                danger,
+                dispatch,
+                router,
+              ]);
 
   // =========================================================
   // MAIN LOADING
@@ -1884,11 +2209,11 @@ const UpdateAssetDetail = () => {
 
             <Heading level={3} className="">Are You Sure ?</Heading>
             <AppText className="text-text-secondary text-center w-2/3 mb-2">
-              Do you want  to create New Asset ?
+              Do you want  to Update Asset ?
             </AppText>
           </View>
           <View className="flex flex-col gap-2 mt-2">
-            <Button title="Yes" fullWidth onPress={addNewAsset} />
+            <Button title="Yes" fullWidth onPress={updateNewAsset} />
             <Button variant="outline" fullWidth className="border border-error"  onPress={() => setIsCreateAssetConfirmationVisible(false)}>
               <AppText className="text-error! font-bold" >Cancel</AppText>
             </Button>

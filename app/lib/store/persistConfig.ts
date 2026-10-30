@@ -16,13 +16,18 @@ export const persistConfig: PersistConfig<any> = {
   ],
 };
 
+export const assetFormPersistConfig: PersistConfig<any> = {
+  key: "assetForm",
+  storage: AsyncStorage,
+};
+
 export const assetWalkDownPersistConfig: PersistConfig<any> = {
   key: "assetWalkDown",
   storage: AsyncStorage,
-  whitelist: [
-    "selectedTab",
-    "selectedActivity",
-    "assetForm",
-    "selectedAssetData",
-  ],
+  whitelist: ["selectedTab", "selectedActivity"],
+};
+
+export const selectedAssetDataPersistConfig: PersistConfig<any> = {
+  key: "selectedAssetData",
+  storage: AsyncStorage,
 };

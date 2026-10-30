@@ -12,9 +12,8 @@ export interface UploadedImage {
   id: string;
   uri: string;
   fileName?: string | null;
-  mimeType?: string | null;
-  width?: number;
-  height?: number;
+  mimeType?: string | null
+
 }
 
 interface ImageUploadProps {
@@ -121,8 +120,8 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
       const newPhoto: UploadedImage = {
         id: generateId(),
         uri: photo.uri,
-        width: photo.width,
-        height: photo.height,
+        // width: photo.width,
+        // height: photo.height,
         fileName: null,
         mimeType: "image/jpeg",
       };

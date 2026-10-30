@@ -1,50 +1,70 @@
 import CompanyLogo from '@/assets/images/360Nav_logo.svg';
-import { useRouter, useSegments } from 'expo-router';
-import React from 'react';
+import { useRouter } from 'expo-router';
 import {
     Pressable,
     StyleSheet,
     Text,
-    View
+    View,
 } from 'react-native';
-import { HEADER_CONFIG } from '../../config/headerConfig';
+
+import { useAppDispatch, useAppSelector } from '@/app/lib/store/hooks';
+import { pressHeaderBack } from '../../hooks/headerSlice';
 import AppIcon from '../ui/AppIcon';
 
 type HeaderProps = {
-  setSidebarOpen: (value: boolean) => void;
+    setSidebarOpen: (value: boolean) => void;
 };
 
-const Header = ({ setSidebarOpen }: HeaderProps ) => {
-    const router = useRouter();
-    const segments = useSegments();
-    const routeName = segments[segments.length - 1];
-    const config = HEADER_CONFIG[routeName] ?? {
-    title: '',
-    showBack: true,
-    showMenu: false,
-    showLogo: false,
-    };
 
+
+
+const Header = ({ setSidebarOpen }: HeaderProps) => {
+
+    const router = useRouter();
+    const dispatch = useAppDispatch();
+
+
+    const {
+        title,
+        showBack,
+        showMenu,
+        showLogo,
+        backAction,
+    } = useAppSelector((state) => state.header);
+
+    
 
     const handleBack = () => {
-        if (router.canGoBack()) {
-            router.back();
+
+        if (backAction === 'custom') {
+            dispatch(pressHeaderBack());
+            return;
         }
-        else {
+
+        if (backAction === 'main') {
             router.replace('/main');
+            return;
+        }
+
+        if (backAction === 'goBack') {
+            if (router.canGoBack()) {
+                router.back();
+            } else {
+                router.replace('/main');
+            }
         }
     };
 
-  
     return (
         <View style={styles.header}>
+
             <View className="h-14 flex-row items-center px-4">
 
                 {/* LEFT SIDE */}
                 <View className="flex-1 flex-row items-center">
 
-                    {/* HOME → MENU */}
-                    {config.showMenu && (
+                    {/* MENU */}
+                    {showMenu && (
                         <Pressable
                             accessibilityRole="button"
                             accessibilityLabel="Toggle menu"
@@ -60,8 +80,8 @@ const Header = ({ setSidebarOpen }: HeaderProps ) => {
                         </Pressable>
                     )}
 
-                    {/* OTHER SCREENS → BACK */}
-                    {config.showBack && (
+                    {/* BACK */}
+                    {showBack && (
                         <Pressable
                             accessibilityRole="button"
                             accessibilityLabel="Go back"
@@ -77,12 +97,10 @@ const Header = ({ setSidebarOpen }: HeaderProps ) => {
                         </Pressable>
                     )}
 
-                   
-
                 </View>
 
                 {/* LOGO */}
-                {config.showLogo && (
+                {showLogo && (
                     <View>
                         <CompanyLogo
                             width={120}
@@ -90,44 +108,29 @@ const Header = ({ setSidebarOpen }: HeaderProps ) => {
                         />
                     </View>
                 )}
-                 {/* SCREEN TITLE */}
-                    {config.title && (
-                        <Text className="ml-3 text-lg font-semibold text-gray-900">
-                            {config?.title}
-                        </Text>
-                    )}
+
+                {/* TITLE */}
+                {title && (
+                    <Text className="ml-3 text-lg font-semibold text-gray-900">
+                        {title}
+                    </Text>
+                )}
 
                 {/* RIGHT SIDE */}
-                <View className="flex-1 items-end">
-                    {/* You can put profile icon here later */}
-                </View>
+                <View className="flex-1 items-end" />
 
             </View>
+
         </View>
-    )
-}
+    );
+};
 
-export default Header
-
-
-//   --shadow-color: rgba(15, 23, 42, 0.08);
-
-//   --shadow-sm: rgba(15, 23, 42, 0.04);
-//   --shadow-md: rgba(15, 23, 42, 0.08);
-//   --shadow-lg: rgba(15, 23, 42, 0.12);
-
+export default Header;
 
 const styles = StyleSheet.create({
     header: {
-        //backgroundColor: '#F8FAFC',
-        // ─────────────────────────────
-        // Android Shadow
-        // ─────────────────────────────
         elevation: 10,
 
-        // ─────────────────────────────
-        // iOS Shadow
-        // ─────────────────────────────
         shadowColor: 'rgba(15, 23, 42, 0.25)',
         shadowOffset: {
             width: 0,
@@ -135,6 +138,7 @@ const styles = StyleSheet.create({
         },
         shadowOpacity: 0.25,
         shadowRadius: 1.41,
+
         zIndex: 10,
     },
-})
+});

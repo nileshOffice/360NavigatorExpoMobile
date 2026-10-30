@@ -37,11 +37,15 @@ export interface SaveAssetWalkDownDetailsRequest {
 }
 
 export interface UpdateAssetWalkDownDetailsRequest {
-  id21: number;
-  id22: number;
-  id23: number;
+  id21: any;
   id: string;
+  id1: string;
+  id2?: any;
+  id22: any;
+  id23: number;
   id24: number;
+  id25: number;
+  id3: string;
 }
 
 export interface InsertAssetDocumentsRequest {
@@ -59,7 +63,10 @@ export interface GetFileListByObjectIdRequest {
     
 }
 
-
+export interface UploadedFileResponse {
+  filePath?: string;
+  url?: string;
+}
 
 export const worlkdownApi = baseApi.injectEndpoints({
     endpoints: builder => ({
@@ -123,25 +130,41 @@ export const worlkdownApi = baseApi.injectEndpoints({
 
         updateAssetWalkDownDetails: builder.mutation<any, UpdateAssetWalkDownDetailsRequest>({
             query: (payload) => ({
-                url: "/api/dqa/updateAssetWalkDownDetails",
+                url: "/api/dqa/updateAssetInformation",
                 method: "POST",
                 body: payload,
             }),
         }),
 
-        insertAssetDocuments: builder.mutation< any,InsertAssetDocumentsRequest>({
+     
+        uploadFilesToRootFolder: builder.mutation< UploadedFileResponse[], FormData>({
+            query: (payload) => {
+                debugger;
+
+                console.log('📦 FormData:', payload);
+                return {
+                    url: '/api/objectImage/uploadFilesToRootFolder',
+                    method: 'POST',
+                    body: payload,
+                };
+            },
+        }),
+
+          insertAssetDocuments: builder.mutation< any, InsertAssetDocumentsRequest>({
             query: (payload) => ({
                 url: "/api/pmo/insertAssetDocuments",
                 method: "POST",
                 body: payload,
             }),
-        }),
+        }), 
 
+
+ 
         getFileListByObjectId: builder.query<ObjectImagelist[], ImageIdto>({
-            query: (idDto) => ({
+            query: (payload) => ({
                 url: "/api/cmn/getFileListByObjectId",
                 method: "POST",
-                body: idDto,
+                body: payload,
             }),
         }),
 
@@ -161,5 +184,6 @@ export const {
     useSaveAssetWalkDownDetailsMutation,
     useUpdateAssetWalkDownDetailsMutation,
     useInsertAssetDocumentsMutation,
-    useLazyGetFileListByObjectIdQuery
+    useLazyGetFileListByObjectIdQuery,
+    useUploadFilesToRootFolderMutation
 } = worlkdownApi;

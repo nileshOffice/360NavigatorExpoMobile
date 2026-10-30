@@ -4,12 +4,13 @@ export type SelectOption = {
 };
 
 export type AssetImage = {
+  // type: string;
   id: string;
   uri: string;
   fileName?: string | null;
   mimeType?: string | null;
-  width?: number;
-  height?: number;
+  // width?: number;
+  // height?: number;
 };
 
 export type AssetForm = {

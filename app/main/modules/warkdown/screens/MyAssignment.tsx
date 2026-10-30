@@ -4,6 +4,7 @@ import Button from '@/app/common/components/ui/Button/Button';
 import CardSkeleton from '@/app/common/components/ui/CardSkeleton';
 import { AppText, Heading } from '@/app/common/components/ui/Typography';
 import { APP_ROUTES } from '@/app/common/config/routes';
+import { resetHeader, setHeader } from '@/app/common/hooks/headerSlice';
 import { assignmentSectionHeader } from '@/app/data';
 import { BASE_URL } from '@/app/lib/config/apiConfig';
 import { useAppDispatch, useAppSelector } from '@/app/lib/store/hooks';
@@ -47,6 +48,26 @@ const MyAssignment = () => {
     const [assignedAssetListData, setAssignedAssetListData] = useState<any[]>([]);
     const [addedAssetListData, setAddedAssetListData] = useState<any[]>([]);
     const [completedAssetListData, setCompletedAssetListData] = useState<any[]>([]);
+
+
+
+      useEffect(() => {
+    
+            dispatch(
+                setHeader({
+                    title: 'My Assignement',
+                    showBack: true,
+                    showMenu: false,
+                    showLogo: false,
+                    backAction: 'goBack',
+                })
+            );
+    
+            return () => {
+                dispatch(resetHeader());
+            };
+    
+        }, [dispatch]);
 
 
     const { currentUser } = useAppSelector((state) => state.auth);

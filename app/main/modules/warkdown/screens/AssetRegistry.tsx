@@ -7,6 +7,7 @@ import Card from '@/app/common/components/ui/Card/Card';
 import CardSkeleton from '@/app/common/components/ui/CardSkeleton';
 import { AppText, Heading } from '@/app/common/components/ui/Typography';
 import { APP_ROUTES } from '@/app/common/config/routes';
+import { resetHeader, setHeader } from '@/app/common/hooks/headerSlice';
 import Screen from '@/app/common/layouts/Screen';
 import { safetyGuidelines } from '@/app/data';
 import { useAppDispatch, useAppSelector } from '@/app/lib/store/hooks';
@@ -52,6 +53,28 @@ type assetRegistryListProps = {
 const AssetRegistry = () => {
 
   const dispatch = useAppDispatch();
+
+
+  
+  useEffect(() => {
+
+    dispatch(
+      setHeader({
+        title: 'Asset Registry',
+        showBack: true,
+        showMenu: false,
+        showLogo: false,
+        backAction: 'goBack',
+      })
+    );
+
+    return () => {
+      dispatch(resetHeader());
+    };
+
+  }, [dispatch]);
+
+
 
   const activeTab = useAppSelector(
     state => state.assetWalkDown.selectedTab
