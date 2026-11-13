@@ -1,13 +1,13 @@
 import clsx from 'clsx';
 import React from 'react';
 import {
-  LayoutAnimation,
-  Platform,
-  Pressable,
-  StyleProp,
-  UIManager,
-  View,
-  ViewStyle,
+    LayoutAnimation,
+    Platform,
+    Pressable,
+    StyleProp,
+    UIManager,
+    View,
+    ViewStyle,
 } from 'react-native';
 
 

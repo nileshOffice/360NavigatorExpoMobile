@@ -1,30 +1,18 @@
+import type { FetchArgs, FetchBaseQueryError } from "@reduxjs/toolkit/query";
 import { BaseQueryFn, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 
-import type { FetchArgs, FetchBaseQueryError } from "@reduxjs/toolkit/query";
-
+import { handleApiError } from "@/app/common/api/apiErrorHandler";
 import type { RootState } from "@/app/lib/store/store";
-
-import { setSessionExpired } from "@/app/auth/authSlice";
-
 import { BASE_URL } from "../config/apiConfig";
-
 import { cryptoService } from "../services/crypto/cryptoService";
 
-/**
- * =========================================================
- * CONFIGURATION
- * =========================================================
- */
+// =========================================================
+// CONFIGURATION
+// =========================================================
 
 const REFRESH_TOKEN_URL = "/api/token/refreshAccessToken";
-
 const BOOTSTRAP_URL = "/api/token/loadApplicationData";
 
-/**
- * URLs excluded from loader tracking.
- *
- * These URLs are not necessarily excluded from encryption.
- */
 const EXCLUDE_LOADER_URLS = [
   "/api/user/pingServer",
   "/api/openAi/matchSpareParts",
@@ -36,9 +24,6 @@ const EXCLUDE_LOADER_URLS = [
   "https://ai.360performancenavigator.com/run-matching",
 ];
 
-/**
- * URLs excluded from encryption.
- */
 const EXCLUDE_ENCRYPTION_URLS = [
   "/sso/",
   "/api/token/check-sso-status",
@@ -46,42 +31,17 @@ const EXCLUDE_ENCRYPTION_URLS = [
   "/api/auth/sso-revoke-session",
 ];
 
-/**
- * URLs that should not have their POST body encrypted.
- */
 const EXCLUDE_POST_ENCRYPTION_URLS = ["/run-matching"];
 
-/**
- * Angular file upload endpoints.
- */
-const FILE_UPLOAD_URLS = [
-  "/api/objectImage/uploadFilesToRootFolder",
-  "/api/openAi/matchSpareParts",
-  "/api/openAi/extractMaintenanceTask",
-];
-
-/**
- * =========================================================
- * REFRESH TOKEN MANAGER
- * =========================================================
- *
- * Shared promise prevents multiple refresh requests.
- *
- * Example:
- * Request A -> 401
- * Request B -> 401
- * Request C -> 401
- *
- * Only one refresh request is executed.
- */
+// =========================================================
+// REFRESH TOKEN MANAGER
+// =========================================================
 
 let refreshPromise: Promise<string | null> | null = null;
 
-/**
- * =========================================================
- * URL HELPERS
- * =========================================================
- */
+// =========================================================
+// URL HELPERS
+// =========================================================
 
 const getRequestUrl = (args: string | FetchArgs): string => {
   return typeof args === "string" ? args : args.url;
@@ -91,9 +51,11 @@ const matchesUrl = (url: string, patterns: string[]): boolean => {
   return patterns.some((pattern) => url.includes(pattern));
 };
 
-const isBootstrapRequest = (url: string) => url.includes(BOOTSTRAP_URL);
+const isBootstrapRequest = (url: string): boolean =>
+  url.includes(BOOTSTRAP_URL);
 
-const isRefreshRequest = (url: string) => url.includes(REFRESH_TOKEN_URL);
+const isRefreshRequest = (url: string): boolean =>
+  url.includes(REFRESH_TOKEN_URL);
 
 const isMultipartRequest = (args: string | FetchArgs): boolean => {
   if (typeof args === "string") {
@@ -103,30 +65,23 @@ const isMultipartRequest = (args: string | FetchArgs): boolean => {
   return typeof FormData !== "undefined" && args.body instanceof FormData;
 };
 
-/**
- * =========================================================
- * HEADER MANAGEMENT
- * =========================================================
- */
+// =========================================================
+// BASE QUERY
+// =========================================================
 
 const rawBaseQuery = fetchBaseQuery({
   baseUrl: BASE_URL,
 
   prepareHeaders: (headers, { getState, arg }) => {
     const state = getState() as RootState;
-
     const currentUser = state.auth.currentUser;
 
     const url = getRequestUrl(arg as string | FetchArgs);
 
     const isBootstrap = isBootstrapRequest(url);
-
     const isSSORequest = matchesUrl(url, EXCLUDE_ENCRYPTION_URLS);
 
-    /**
-     * Angular skips its normal header injection
-     * for bootstrap and SSO requests.
-     */
+    // Angular skips common headers for these requests.
     if (isBootstrap || isSSORequest) {
       return headers;
     }
@@ -183,12 +138,6 @@ const rawBaseQuery = fetchBaseQuery({
     // MODULE / SITE / COMPANY HEADERS
     // -----------------------------------------------------
 
-    /**
-     * Angular reads moduleId from LocalStorage.
-     *
-     * Adapt this lookup to your actual Redux slice
-     * if moduleId is stored elsewhere.
-     */
     const moduleId =
       (state as any).application?.moduleId ??
       (state as any).common?.moduleId ??
@@ -209,130 +158,131 @@ const rawBaseQuery = fetchBaseQuery({
     // -----------------------------------------------------
 
     headers.set("Cache-Control", "no-cache");
-
     headers.set("Pragma", "no-cache");
 
     return headers;
   },
 });
 
-/**
- * =========================================================
- * FORM DATA ENCRYPTION
- * =========================================================
- *
- * Encrypt metadata only.
- * Preserve actual files.
- */
-
-const encryptFormData = (originalFormData: FormData): FormData => {
-  const newFormData = new FormData();
-
-  const companyCode = originalFormData.get("companyCode");
-
-  const folderType = originalFormData.get("folderType");
-
-  const objectId = originalFormData.get("objectId")?.toString() ?? "";
-
-  const encryptedMetadata = cryptoService.encryptPayloadsUsingAES256({
-    companyCode,
-    folderType,
-    objectId,
-  });
-
-  newFormData.append("metadata", encryptedMetadata);
-
-  originalFormData.forEach((value, key) => {
-    if (!["companyCode", "folderType", "objectId"].includes(key)) {
-      newFormData.append(key, value);
-    }
-  });
-
-  return newFormData;
-};
-
-/**
- * =========================================================
- * REQUEST ENCRYPTION
- * =========================================================
- */
+// =========================================================
+// REQUEST ENCRYPTION
+// =========================================================
 
 const prepareRequest = (args: string | FetchArgs): string | FetchArgs => {
   const url = getRequestUrl(args);
-
-  if (typeof args === "string") {
-    return args;
-  }
 
   const isBootstrap = isBootstrapRequest(url);
 
   const isSSO = matchesUrl(url, EXCLUDE_ENCRYPTION_URLS);
 
-  const isRefresh = isRefreshRequest(url);
-
-  const isMultipart = isMultipartRequest(args);
-
-  const skipPostEncryption = matchesUrl(url, EXCLUDE_POST_ENCRYPTION_URLS);
-
-  /**
-   * Skip encryption for:
-   * - Bootstrap
-   * - SSO
-   * - Refresh token
-   * - Unconfigured encryption
-   */
+  // Refresh is intentionally NOT excluded.
+  // Angular encrypts refresh requests as well.
   const encryptionEnabled =
-    !isBootstrap && !isSSO && !isRefresh && cryptoService.isConfigured();
+    !isBootstrap && !isSSO && cryptoService.isConfigured();
 
   if (!encryptionEnabled) {
     return args;
   }
 
-  let modifiedArgs: FetchArgs = {
-    ...args,
+  // Support both string URL and FetchArgs.
+  let modifiedArgs: FetchArgs =
+    typeof args === "string" ? { url: args } : { ...args };
+
+  const isMultipart = isMultipartRequest(args);
+
+  const skipPostEncryption = matchesUrl(url, EXCLUDE_POST_ENCRYPTION_URLS);
+
+  const method = (modifiedArgs.method ?? "GET").toUpperCase();
+
+  // -------------------------------------------------------
+  // RESPONSE HANDLER
+  // -------------------------------------------------------
+
+  // Read encrypted responses as text.
+  // Important for GET requests without query parameters too.
+  modifiedArgs.responseHandler = "text";
+
+  // -------------------------------------------------------
+  // FORM DATA ENCRYPTION
+  // -------------------------------------------------------
+
+  // FORM DATA ENCRYPTION
+  type ReactNativeFormData = FormData & {
+    _parts?: Array<[string, any]>;
   };
 
-  // -------------------------------------------------------
-  // FORM DATA
-  // -------------------------------------------------------
+  const encryptMultipartFormData = (formData: FormData): FormData => {
+    debugger;
+    const rnFormData = formData as ReactNativeFormData;
+    const parts = rnFormData._parts;
 
-  if (isMultipart && modifiedArgs.method?.toUpperCase() === "POST") {
-    modifiedArgs = {
-      ...modifiedArgs,
-      body: encryptFormData(modifiedArgs.body as FormData),
-    };
+    if (!Array.isArray(parts)) {
+      throw new Error(
+        "Unsupported React Native FormData implementation: _parts not available",
+      );
+    }
+
+    // Prevent encrypting metadata again during a 401 retry.
+    const existingMetadata = parts.some(([key]) => key === "metadata");
+
+    if (existingMetadata) {
+      return formData;
+    }
+
+    const companyCode = parts.find(([key]) => key === "companyCode")?.[1];
+
+    const folderType = parts.find(([key]) => key === "folderType")?.[1];
+
+    const objectId = parts.find(([key]) => key === "objectId")?.[1];
+
+    if (companyCode == null || folderType == null || objectId == null) {
+      throw new Error(
+        "Missing required upload metadata: companyCode, folderType or objectId",
+      );
+    }
+
+    const encryptedMetadata = cryptoService.encryptPayloadsUsingAES256({
+      companyCode,
+      folderType,
+      objectId: objectId?.toString() ?? "",
+    });
+
+    // Remove only metadata fields.
+    // Original file objects remain untouched.
+    rnFormData._parts = parts.filter(
+      ([key]) => !["companyCode", "folderType", "objectId"].includes(key),
+    );
+
+    // Append encrypted metadata.
+    rnFormData._parts.push(["metadata", encryptedMetadata]);
+
+    return formData;
+  };
+
+  if (isMultipart && method === "POST") {
+    if (url.includes("/api/objectImage/uploadFilesToRootFolder")) {
+      modifiedArgs.body = encryptMultipartFormData(
+        modifiedArgs.body as FormData,
+      );
+    }
 
     return modifiedArgs;
   }
-
   // -------------------------------------------------------
   // POST / PUT / PATCH BODY ENCRYPTION
   // -------------------------------------------------------
-
-  const method = (modifiedArgs.method ?? "GET").toUpperCase();
 
   if (
     ["POST", "PUT", "PATCH"].includes(method) &&
     modifiedArgs.body !== undefined &&
     !skipPostEncryption
   ) {
-    const encryptedBody = cryptoService.encryptPayloadsUsingAES256(
+    modifiedArgs.body = cryptoService.encryptPayloadsUsingAES256(
       modifiedArgs.body,
     );
 
-    modifiedArgs = {
-      ...modifiedArgs,
-
-      body: encryptedBody,
-
-      responseHandler: "text",
-
-      headers: {
-        ...(modifiedArgs.headers as Record<string, string>),
-
-        "Content-Type": "text/plain",
-      },
-    };
+    // Angular sends application/json for encrypted bodies.
+    // Do not change this to text/plain.
   }
 
   // -------------------------------------------------------
@@ -354,23 +304,16 @@ const prepareRequest = (args: string | FetchArgs): string | FetchArgs => {
       const encryptedQuery =
         cryptoService.encryptPayloadsUsingAES256(queryString);
 
-      /**
-       * Angular sends:
-       * ?encryptedQuery
-       *
-       * Not:
-       * ?data=encryptedQuery
-       */
+      // Angular format:
+      // ?encryptedQuery
+      // NOT ?data=encryptedQuery
+
       const separator = url.includes("?") ? "&" : "?";
 
       modifiedArgs = {
         ...modifiedArgs,
-
         url: `${url}${separator}${encryptedQuery}`,
-
         params: undefined,
-
-        responseHandler: "text",
       };
     }
   }
@@ -378,13 +321,14 @@ const prepareRequest = (args: string | FetchArgs): string | FetchArgs => {
   return modifiedArgs;
 };
 
-/**
- * =========================================================
- * RESPONSE DECRYPTION
- * =========================================================
- */
+// =========================================================
+// RESPONSE DECRYPTION
+// =========================================================
 
-const decryptResponse = (result: any, encryptionEnabled: boolean) => {
+const decryptResponse = async (
+  result: any,
+  encryptionEnabled: boolean,
+): Promise<any> => {
   if (!encryptionEnabled) {
     return result;
   }
@@ -393,12 +337,16 @@ const decryptResponse = (result: any, encryptionEnabled: boolean) => {
   // SUCCESS RESPONSE
   // -------------------------------------------------------
 
-  if (typeof result.data === "string") {
+  if (typeof result.data === "string" && result.data.trim() !== "") {
+    debugger;
     try {
+      const decryptedData = await cryptoService.decryptAPIResponseUsingAES256(
+        result.data,
+      );
+
       return {
         ...result,
-
-        data: cryptoService.decryptAPIResponseUsingAES256(result.data),
+        data: decryptedData,
       };
     } catch (error) {
       console.error("[Interceptor] Success response decryption failed:", error);
@@ -417,13 +365,15 @@ const decryptResponse = (result: any, encryptionEnabled: boolean) => {
     result.error.data.trim() !== ""
   ) {
     try {
+      const decryptedError = await cryptoService.decryptAPIResponseUsingAES256(
+        result.error.data,
+      );
+
       return {
         ...result,
-
         error: {
           ...result.error,
-
-          data: cryptoService.decryptAPIResponseUsingAES256(result.error.data),
+          data: decryptedError,
         },
       };
     } catch (error) {
@@ -436,11 +386,9 @@ const decryptResponse = (result: any, encryptionEnabled: boolean) => {
   return result;
 };
 
-/**
- * =========================================================
- * AUTHENTICATION ERROR CLASSIFICATION
- * =========================================================
- */
+// =========================================================
+// AUTHENTICATION ERROR CLASSIFICATION
+// =========================================================
 
 const getAuthErrorCode = (errorData: any): string | null => {
   if (!errorData) {
@@ -479,20 +427,15 @@ const AUTH_ERROR_MESSAGES: Record<string, string> = {
   InvalidToken: "Your access link is no longer valid.",
 };
 
-/**
- * =========================================================
- * REFRESH TOKEN API
- * =========================================================
- */
+// =========================================================
+// REFRESH TOKEN API
+// =========================================================
 
 const refreshAccessToken = async (
   api: any,
   extraOptions: any,
 ): Promise<string | null> => {
-  /**
-   * If refresh is already running,
-   * return the existing promise.
-   */
+  // Reuse existing refresh request.
   if (refreshPromise) {
     return refreshPromise;
   }
@@ -503,12 +446,12 @@ const refreshAccessToken = async (
 
       const currentUser = state.auth.currentUser;
 
-      if (!currentUser || !currentUser.accessToken) {
+      if (!currentUser?.accessToken) {
         return null;
       }
 
       // ---------------------------------------------------
-      // ANGULAR REFRESH PAYLOAD
+      // REFRESH PAYLOAD - SAME AS ANGULAR
       // ---------------------------------------------------
 
       const refreshPayload = {
@@ -518,38 +461,47 @@ const refreshAccessToken = async (
       };
 
       // ---------------------------------------------------
-      // REFRESH REQUEST
+      // ENCRYPT REFRESH REQUEST
       // ---------------------------------------------------
 
-      const refreshResult = await rawBaseQuery(
-        {
-          url: REFRESH_TOKEN_URL,
+      const refreshArgs = prepareRequest({
+        url: REFRESH_TOKEN_URL,
+        method: "POST",
+        body: refreshPayload,
+      });
 
-          method: "POST",
+      // ---------------------------------------------------
+      // SEND REFRESH REQUEST
+      // ---------------------------------------------------
 
-          body: refreshPayload,
+      const refreshResult = await rawBaseQuery(refreshArgs, api, extraOptions);
 
-          responseHandler: "json",
-        },
-        api,
-        extraOptions,
+      // ---------------------------------------------------
+      // DECRYPT REFRESH RESPONSE
+      // ---------------------------------------------------
+
+      const decryptedRefreshResult = await decryptResponse(
+        refreshResult,
+        cryptoService.isConfigured(),
       );
 
-      if (refreshResult.error) {
+      if (decryptedRefreshResult.error) {
         console.error(
           "[Interceptor] Token refresh failed:",
-          refreshResult.error,
+          decryptedRefreshResult.error,
         );
 
         return null;
       }
 
-      const response: any = refreshResult.data;
+      const response: any = decryptedRefreshResult.data;
 
       const newAccessToken =
         response?.accessToken ?? response?.data?.accessToken;
 
       if (!newAccessToken) {
+        console.error("[Interceptor] Refresh response has no accessToken");
+
         return null;
       }
 
@@ -562,14 +514,6 @@ const refreshAccessToken = async (
         accessToken: newAccessToken,
       };
 
-      /**
-       * IMPORTANT:
-       * Your authSlice must handle this action.
-       *
-       * Add a reducer named updateCurrentUser,
-       * or replace this action with your existing
-       * user-update action.
-       */
       api.dispatch({
         type: "auth/updateCurrentUser",
         payload: updatedUser,
@@ -592,11 +536,9 @@ const refreshAccessToken = async (
   }
 };
 
-/**
- * =========================================================
- * MAIN BASE QUERY WITH INTERCEPTOR
- * =========================================================
- */
+// =========================================================
+// MAIN BASE QUERY WITH INTERCEPTOR
+// =========================================================
 
 export const baseQueryWithInterceptor: BaseQueryFn<
   string | FetchArgs,
@@ -611,23 +553,15 @@ export const baseQueryWithInterceptor: BaseQueryFn<
 
   const isRefresh = isRefreshRequest(url);
 
-  const isMultipart = isMultipartRequest(args);
-
   const encryptionEnabled =
-    !isBootstrap &&
-    !isSSO &&
-    !isRefresh &&
-    !isMultipart &&
-    cryptoService.isConfigured();
+    !isBootstrap && !isSSO && cryptoService.isConfigured();
 
   const shouldTrackLoader = !matchesUrl(url, EXCLUDE_LOADER_URLS);
 
-  /**
-   * The loader counter is tracked here.
-   *
-   * Connect these events to your loader slice
-   * if you want the Angular global-loader behaviour.
-   */
+  // -------------------------------------------------------
+  // START LOADER
+  // -------------------------------------------------------
+
   if (shouldTrackLoader) {
     api.dispatch({
       type: "apiLoader/requestStarted",
@@ -646,12 +580,16 @@ export const baseQueryWithInterceptor: BaseQueryFn<
     } catch (error) {
       console.error("[Interceptor] Request encryption failed:", error);
 
+      const requestError: FetchBaseQueryError = {
+        status: "CUSTOM_ERROR",
+        error: "Request encryption failed",
+        data: error,
+      };
+
+      handleApiError(requestError, api.dispatch);
+
       return {
-        error: {
-          status: "CUSTOM_ERROR",
-          error: "Request encryption failed",
-          data: error,
-        },
+        error: requestError,
       };
     }
 
@@ -665,7 +603,27 @@ export const baseQueryWithInterceptor: BaseQueryFn<
     // DECRYPT RESPONSE
     // -----------------------------------------------------
 
-    result = decryptResponse(result, encryptionEnabled);
+    result = await decryptResponse(result, encryptionEnabled);
+
+    // -----------------------------------------------------
+    // DEVELOPMENT LOGS
+    // -----------------------------------------------------
+
+    if (__DEV__) {
+      console.log("========== API RESPONSE DEBUG ==========");
+
+      console.log("URL:", url);
+
+      console.log("Status:", result.meta?.response?.status);
+
+      console.log("Response type:", typeof result.data);
+
+      console.log("Response data:", result.data);
+
+      console.log("Error data:", result.error?.data);
+
+      console.log("========================================");
+    }
 
     // -----------------------------------------------------
     // 401 TOKEN REFRESH
@@ -676,13 +634,7 @@ export const baseQueryWithInterceptor: BaseQueryFn<
 
       console.log("[Interceptor] 401:", authErrorCode);
 
-      /**
-       * Angular refreshes only when the error body
-       * is null and the user is logged in.
-       *
-       * Known authentication errors should not
-       * trigger a token refresh.
-       */
+      // Known authentication errors should not refresh.
       const knownAuthError =
         authErrorCode !== null &&
         Object.keys(AUTH_ERROR_MESSAGES).includes(authErrorCode);
@@ -691,40 +643,40 @@ export const baseQueryWithInterceptor: BaseQueryFn<
 
       const currentUser = state.auth.currentUser;
 
+      // fetchBaseQuery with responseHandler: "text"
+      // may return an empty string instead of null.
+      const isEmptyErrorBody =
+        result.error.data == null || result.error.data === "";
+
       const shouldRefresh =
-        currentUser?.accessToken &&
-        !knownAuthError &&
-        result.error.data == null;
+        !!currentUser?.accessToken && !knownAuthError && isEmptyErrorBody;
 
       if (shouldRefresh) {
         // -----------------------------------------------
-        // SINGLE REFRESH
+        // REFRESH ACCESS TOKEN
         // -----------------------------------------------
 
         const newToken = await refreshAccessToken(api, extraOptions);
 
         if (newToken) {
-          /**
-           * Retry the original, unencrypted request.
-           *
-           * This is important because prepareRequest
-           * must encrypt the body only once.
-           */
+          // ---------------------------------------------
+          // RETRY ORIGINAL REQUEST
+          // ---------------------------------------------
+
+          // FormData was already transformed in place.
+          // The metadata guard prevents double encryption on retry.
+
           const retryArgs = prepareRequest(args);
 
           const retryResult = await rawBaseQuery(retryArgs, api, extraOptions);
 
-          const decryptedRetryResult = decryptResponse(
+          const decryptedRetryResult = await decryptResponse(
             retryResult,
             encryptionEnabled,
           );
 
-          // ---------------------------------------------
-          // RETRY FAILED AGAIN
-          // ---------------------------------------------
-
-          if (decryptedRetryResult.error?.status === 401) {
-            api.dispatch(setSessionExpired(true));
+          if (decryptedRetryResult.error) {
+            handleApiError(decryptedRetryResult.error, api.dispatch);
           }
 
           return decryptedRetryResult;
@@ -734,23 +686,9 @@ export const baseQueryWithInterceptor: BaseQueryFn<
         // REFRESH FAILED
         // -----------------------------------------------
 
-        api.dispatch(setSessionExpired(true));
+        handleApiError(result.error, api.dispatch);
 
         return result;
-      }
-
-      // ---------------------------------------------------
-      // HANDLE AUTHENTICATION ERRORS
-      // ---------------------------------------------------
-
-      if (
-        authErrorCode === "SessionExpired" ||
-        authErrorCode === "ConcurrentLogin" ||
-        authErrorCode === "RoleChanged"
-      ) {
-        if (!state.auth.sessionExpired) {
-          api.dispatch(setSessionExpired(true));
-        }
       }
     }
 
@@ -781,16 +719,18 @@ export const baseQueryWithInterceptor: BaseQueryFn<
         default:
           break;
       }
+
+      handleApiError(result.error, api.dispatch);
     }
 
     // -----------------------------------------------------
-    // RETURN
+    // RETURN RESULT
     // -----------------------------------------------------
 
     return result;
   } finally {
     // -----------------------------------------------------
-    // LOADER CLEANUP
+    // STOP LOADER
     // -----------------------------------------------------
 
     if (shouldTrackLoader) {

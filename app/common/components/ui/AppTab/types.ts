@@ -1,8 +1,4 @@
-import { StyleProp, ViewStyle } from 'react-native';
-
-
-
-
+import { StyleProp, ViewStyle } from "react-native-css/components";
 
 export type TabKey = string;
 
@@ -13,7 +9,12 @@ export interface TabItem {
   count?: number;
 
   icon?: string;
-  iconFamily?:'Ionicons'| 'MaterialCommunityIcons'| 'Feather'| 'AntDesign' | 'FontAwesome6' ; 
+  iconFamily?:
+    | "Ionicons"
+    | "MaterialCommunityIcons"
+    | "Feather"
+    | "AntDesign"
+    | "FontAwesome6";
   iconSize?: number;
 
   activeColor?: string;

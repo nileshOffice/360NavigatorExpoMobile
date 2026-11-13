@@ -1,15 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import {
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  View,
+    Pressable,
+    ScrollView,
+    StyleSheet,
+    View,
 } from 'react-native';
 
 import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  withTiming,
+    useAnimatedStyle,
+    useSharedValue,
+    withTiming,
 } from 'react-native-reanimated';
 
 import AppIcon from '@/app/common/components/ui/AppIcon';

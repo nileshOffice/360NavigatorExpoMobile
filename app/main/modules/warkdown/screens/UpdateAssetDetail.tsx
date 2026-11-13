@@ -48,22 +48,22 @@ const UpdateAssetDetail = () => {
   const { currentUser, selectedSite } = useAppSelector((state) => state.auth);
 
   // =========================================================
-    // REDUX
-    // =========================================================
-  
+  // REDUX
+  // =========================================================
+
   const assetForm = useAppSelector((state: RootState) => state.assetForm);
 
   // =========================================================
-       // LOCAL STATE
+  // LOCAL STATE
   // =========================================================
- 
+
   const [currentStep, setCurrentStep] = useState(0);
   const [isReviewMode, setIsReviewMode] = useState(false);
   const [isCreateAssetConfirmationVisible, setIsCreateAssetConfirmationVisible] = useState(false);
   const [activeField, setActiveField] = useState<AssetField | null>(null);
   const [activeDrawer, setActiveDrawer] = useState<string | null>(null);
   const [isActiveListDrawer, setIsActiveListDrawer] = useState<boolean>(false);
-  const [isActivateCriticality,  setIsActivateCriticality] = useState<boolean>(false);
+  const [isActivateCriticality, setIsActivateCriticality] = useState<boolean>(false);
   const [searchParentNumber, setSearchParentNumber] = useState<string | null>(
     null,
   );
@@ -74,7 +74,7 @@ const UpdateAssetDetail = () => {
   );
   const [fileFormatErrorMessage, setFileFormatErrorMessage] = useState(false)
 
- 
+
   const selectedAssetData = useAppSelector(
     state => state.selectedAssetData
   );
@@ -90,9 +90,7 @@ const UpdateAssetDetail = () => {
     // Hydrate original + updated values here
   }, [selectedAssetData?.id]);
 
-  console.log("selectedAssetData", selectedAssetData)
 
-  console.log("module", currentUser)
 
 
   const normalizeValue = (value: any) => {
@@ -104,10 +102,10 @@ const UpdateAssetDetail = () => {
   };
 
 
-    // =========================================================
-    // ASSET FIELD API DTO
-    // =========================================================
-  
+  // =========================================================
+  // ASSET FIELD API DTO
+  // =========================================================
+
   const fieldApiDto = useMemo(
     () => ({
       id21: currentUser?.siteId,
@@ -119,10 +117,10 @@ const UpdateAssetDetail = () => {
     [currentUser?.siteId, currentUser?.userId, selectedSite?.orgid],
   );
 
- 
 
-  
-    
+
+
+
   // =========================================================
   // GET BACKEND FIELD CONFIGURATION
   // =========================================================
@@ -134,107 +132,109 @@ const UpdateAssetDetail = () => {
     isError: isFieldsError,
   } = useGetAssetUpdateFieldByClientsQuery(fieldApiDto);
 
-  console.log("assetUpdatedFields" , myAssetUpdateFields)
 
 
-   // =========================================================
-    // LOCATION API
-    // =========================================================
-  
-    const {
-      data: locationResponse,
-      isLoading: isLocationLoading,
-      isError: isLocationError,
-      refetch: refetchLocationHierarchy,
-    } = useGetLocationHierarchyBySidIdQuery(
-      { id: selectedSite?.siteName ?? "" },
-      { skip: !selectedSite?.siteName },
-    );
+  // =========================================================
+  // LOCATION API
+  // =========================================================
 
-
-    
-    // Client Structure Data Loader
-    const {
-      data: clientStructureResponse,
-      isLoading: isClientStructureLoading,
-      isError: isClientStructureError,
-      refetch: refetchClientClassStructureData,
-    } = useGetClientClassStructureDataQuery(
-      { id: selectedSite?.siteName ?? "" },
-      { skip: !selectedSite?.siteName },
-    );
-
-      // ================  Add New Asset  ==========================
-    
-     const [updateAssetWalkDownDetails,
-      {
-        isLoading: isUpdatingAsset,
-      },
-    ] = useUpdateAssetWalkDownDetailsMutation();
-    
-    
-      // ====================  Insert Images  ======================
-    
-    
-    const [
-      insertAssetDocuments,
-      {
-        isLoading: isUploadingImages,
-      },
-    ] = useInsertAssetDocumentsMutation();
+  const {
+    data: locationResponse,
+    isLoading: isLocationLoading,
+    isError: isLocationError,
+    refetch: refetchLocationHierarchy,
+  } = useGetLocationHierarchyBySidIdQuery(
+    { id: selectedSite?.siteName ?? "" },
+    { skip: !selectedSite?.siteName },
+  );
 
 
 
+  // Client Structure Data Loader
+  const {
+    data: clientStructureResponse,
+    isLoading: isClientStructureLoading,
+    isError: isClientStructureError,
+    refetch: refetchClientClassStructureData,
+  } = useGetClientClassStructureDataQuery(
+    { id: selectedSite?.siteName ?? "" },
+    { skip: !selectedSite?.siteName },
+  );
+
+  // ================  Add New Asset  ==========================
+
+  const [updateAssetWalkDownDetails,
+    {
+      isLoading: isUpdatingAsset,
+    },
+  ] = useUpdateAssetWalkDownDetailsMutation();
 
 
- 
-  const {uploadToFolder,isLoading: isUploading,} = useUploadToFolder();
+  // ====================  Insert Images  ======================
 
-const uploadAssetImages = async () => {
-  try {
-    const uploadedPhotos =
-      assetForm?.updateAssetForm?.custom?.uploadePhotos ?? [];
 
-    if (!uploadedPhotos.length) {
-      return [];
+  const [
+    insertAssetDocuments,
+    {
+      isLoading: isUploadingImages,
+    },
+  ] = useInsertAssetDocumentsMutation();
+
+
+
+
+
+
+
+
+  const { uploadToFolder, isLoading: isUploading, } = useUploadToFolder();
+
+  const uploadAssetImages = async () => {
+    try {
+      const uploadedPhotos =
+        assetForm?.updateAssetForm?.custom?.uploadePhotos ?? [];
+
+      if (!uploadedPhotos.length) {
+        return [];
+      }
+
+
+      // 1. Upload images using reusable hook
+      const uploadedFilePaths = await uploadToFolder({
+        files: uploadedPhotos,
+        companyCode: currentUser?.companyCode ?? "",
+        folderType: "PMO/Asset",
+        objectId: "0",
+         fileFlag: "I",
+      });
+
+
+      // 2. Extract file paths
+      const imageList = uploadedFilePaths
+        .map((file) => file.filePath)
+        .filter((path): path is string => Boolean(path));
+
+      // 3. Save uploaded paths against asset
+      if (imageList.length) {
+        debugger
+        const imagePayload = {
+          id32: Number(currentUser?.userId),
+          id21: Number(selectedAssetData?.id),
+          id67: 'A',
+          idArrayStr: imageList,
+          id22: 0,
+        };
+
+        await insertAssetDocuments(imagePayload).unwrap();
+      }
+
+      // return uploadedFilePaths;
+
+    } catch (error) {
+      console.error("Asset image upload failed:", error);
+      throw error;
     }
-
-    // 1. Upload images using reusable hook
-    const uploadedFilePaths = await uploadToFolder({
-      files: uploadedPhotos,
-      companyCode: currentUser?.companyCode ?? "",
-      folderType: "PMO/Asset",
-      objectId: "0",
-      fileFlag: "I",
-    });
-
-    console.log("Uploaded files:", uploadedFilePaths);
-
-    // 2. Extract file paths
-    const imageList = uploadedFilePaths
-      .map((file) => file.filePath)
-      .filter((path): path is string => Boolean(path));
-
-    // 3. Save uploaded paths against asset
-    if (imageList.length) {
-      const imagePayload = {
-        id32: Number(currentUser?.userId),
-        id21: Number(selectedAssetData?.id),
-        id67: "A",
-        idArrayStr: imageList,
-        id22: 0,
-      };
-
-      await insertAssetDocuments(imagePayload).unwrap();
-    }
-
-    return uploadedFilePaths;
-
-  } catch (error) {
-    console.error("Asset image upload failed:", error);
-    throw error;
-  }
-};
+  };
 
 
 
@@ -252,26 +252,26 @@ const uploadAssetImages = async () => {
 
   const hydratedImagesAssetId = useRef<number | null>(null);
 
-  
-    useEffect(() => {
-      dispatch(
-        setHeader({
-          title: 'Update Asset',
-          showBack: true,
-          showMenu: false,
-          showLogo: false,
-          backAction: 'custom',
-        })
-      );
 
-      return () => {
-        dispatch(resetHeader());
-      };
-    }, [dispatch]);
-
-    const headerBackPressed = useAppSelector(
-      (state) => state.header.backPressed
+  useEffect(() => {
+    dispatch(
+      setHeader({
+        title: 'Update Asset',
+        showBack: true,
+        showMenu: false,
+        showLogo: false,
+        backAction: 'custom',
+      })
     );
+
+    return () => {
+      dispatch(resetHeader());
+    };
+  }, [dispatch]);
+
+  const headerBackPressed = useAppSelector(
+    (state) => state.header.backPressed
+  );
 
 
 
@@ -332,265 +332,265 @@ const uploadAssetImages = async () => {
   ]);
 
 
-    
-
-  
-
-    // =========================================================
-      // CREATE FORM FIELDS
-      // =========================================================
-    
-    const formFields = useMemo<AssetField[]>(() => {
-      if (!myAssetUpdateFields?.length) {
-        return [];
-      }
-    
-      const dynamicFields: AssetField[] = myAssetUpdateFields
-        .map((item: any) => {
-          const fieldName = apiFieldMap[item.aXColunmName];
-    
-          const section = categorySectionMap[item.category];
-    
-          /*
-           * Backend can contain fields
-           * which this mobile app does
-           * not support yet.
-           */
-          if (!fieldName || !section) {
-            return null;
-          }
-    
-          return {
-            id: item.id,
-            fieldName,
-            apiFieldName: item.aXColunmName,
-            label: item.displayColnumName || item.colunmName,
-            category: item.category,
-            section,
-            flag: item.flag,
-            isMandatory: item.isMandatory === 1,
-            suggested: item.suggested,
-            suggestedName: item.suggestedname,
-            displayOrder: item.displayOrder,
-            value: null,
-          } as AssetField;
-        })
-        .filter((item): item is AssetField => item !== null);
-    
-      // Custom Upload Images field
-      const uploadImagesField: AssetField = {
-        id: Number(27),
-        fieldName: "uploadImages",
-        apiFieldName: "uploadImages",
-        label: "Upload Images",
-        category: Number(27),
-        section: "custom",
-        flag: 27,
-        isMandatory: false,
-        suggested: false,
-        suggestedName: "",
-        displayOrder: 999,
-        value: null,
-      };
-    
-      return [...dynamicFields, uploadImagesField].sort(
-        (a, b) => a.displayOrder - b.displayOrder
-      );
-    }, [myAssetUpdateFields]);
-    
-      // =========================================================
-      // DYNAMIC STEPS
-      // =========================================================
-    
-      const steps = useMemo(() => {
-        return assetStepConfig
-          .map((step) => {
-            const fields = formFields
-              .filter((field) => step.sections.includes(field.section))
-              .sort((a, b) => a.displayOrder - b.displayOrder);
-    
-            return {
-              ...step,
-              fields,
-            };
-          })
-        // .filter((step) => step.fields.length > 0);
-      }, [formFields]);
 
 
-      
+
+
+  // =========================================================
+  // CREATE FORM FIELDS
+  // =========================================================
+
+  const formFields = useMemo<AssetField[]>(() => {
+    if (!myAssetUpdateFields?.length) {
+      return [];
+    }
+
+    const dynamicFields: AssetField[] = myAssetUpdateFields
+      .map((item: any) => {
+        const fieldName = apiFieldMap[item.aXColunmName];
+
+        const section = categorySectionMap[item.category];
+
+        /*
+         * Backend can contain fields
+         * which this mobile app does
+         * not support yet.
+         */
+        if (!fieldName || !section) {
+          return null;
+        }
+
+        return {
+          id: item.id,
+          fieldName,
+          apiFieldName: item.aXColunmName,
+          label: item.displayColnumName || item.colunmName,
+          category: item.category,
+          section,
+          flag: item.flag,
+          isMandatory: item.isMandatory === 1,
+          suggested: item.suggested,
+          suggestedName: item.suggestedname,
+          displayOrder: item.displayOrder,
+          value: null,
+        } as AssetField;
+      })
+      .filter((item): item is AssetField => item !== null);
+
+    // Custom Upload Images field
+    const uploadImagesField: AssetField = {
+      id: Number(27),
+      fieldName: "uploadImages",
+      apiFieldName: "uploadImages",
+      label: "Upload Images",
+      category: Number(27),
+      section: "custom",
+      flag: 27,
+      isMandatory: false,
+      suggested: false,
+      suggestedName: "",
+      displayOrder: 999,
+      value: null,
+    };
+
+    return [...dynamicFields, uploadImagesField].sort(
+      (a, b) => a.displayOrder - b.displayOrder
+    );
+  }, [myAssetUpdateFields]);
+
+  // =========================================================
+  // DYNAMIC STEPS
+  // =========================================================
+
+  const steps = useMemo(() => {
+    return assetStepConfig
+      .map((step) => {
+        const fields = formFields
+          .filter((field) => step.sections.includes(field.section))
+          .sort((a, b) => a.displayOrder - b.displayOrder);
+
+        return {
+          ...step,
+          fields,
+        };
+      })
+    // .filter((step) => step.fields.length > 0);
+  }, [formFields]);
+
+
+
   const totalSteps = steps.length;
   const safeCurrentStep = Math.min(currentStep, Math.max(totalSteps - 1, 0));
   const currentStepData = steps[safeCurrentStep];
   const treeResponse = activeDrawer === "location" ? locationResponse : activeDrawer === "assetClass" ? clientStructureResponse : undefined;
-   
 
 
-    // =========================================================
-    // LOCATION DATA
-    // =========================================================
-    const nativeTreeResponse = useMemo(
-      () => buildLocationTree(treeResponse),
-      [treeResponse]
-    );
 
-     // =========================================================
-      // LOCATION LOADER
-      // =========================================================
-    
-      const loadLocationHierarchy = useCallback(async () => {
-        if (!selectedSite?.siteName) {
-          return;
-        }
-    
-        try {
-          await refetchLocationHierarchy();
-        } catch (error) {
-          console.error("Error loading location hierarchy:", error);
-        }
-      }, [refetchLocationHierarchy, selectedSite?.siteName]);
-    
-      // Client Structure Data Loader (Placeholder)
-      const clientStructureData = useCallback(async () => {
-        if (!selectedSite?.siteName) {
-          return;
-        }
-    
-        try {
-          await refetchClientClassStructureData();
-        } catch (error) {
-          console.error("Error loading client structure data:", error);
-        }
-      }, [refetchClientClassStructureData, selectedSite?.siteName,]);
+  // =========================================================
+  // LOCATION DATA
+  // =========================================================
+  const nativeTreeResponse = useMemo(
+    () => buildLocationTree(treeResponse),
+    [treeResponse]
+  );
 
+  // =========================================================
+  // LOCATION LOADER
+  // =========================================================
 
-      
-        //------------------------------  Work area Field -------------------------------------------
-      
-      
-      const [
-        getMasterDataUpdateAssetInformation,
-        {
-          data: assetInformation,
-          isLoading: isAssetInformationLoading,
-          isFetching: isAssetInformationFetching,
-          isError: isAssetInformationError,
-          error: masterDataError,
-        },
-      ] = useLazyGetMasterDataUpdateAssetInformationQuery();
+  const loadLocationHierarchy = useCallback(async () => {
+    if (!selectedSite?.siteName) {
+      return;
+    }
 
-    
-      // Insted of Save I want to use update Fild API to update the field value in backend. So I will use this function to save the field value in redux store and then call the update field API to update the value in backend.
+    try {
+      await refetchLocationHierarchy();
+    } catch (error) {
+      console.error("Error loading location hierarchy:", error);
+    }
+  }, [refetchLocationHierarchy, selectedSite?.siteName]);
 
-        const updateAssetField = useCallback(
-          (section: AssetSection, field: string, value: any) => {
-            dispatch(
-              assetAssetFormAction({
-                section,
-                field,
-                value,
-              }),
-            );
-          },
-          [dispatch],
-        );
-           
+  // Client Structure Data Loader (Placeholder)
+  const clientStructureData = useCallback(async () => {
+    if (!selectedSite?.siteName) {
+      return;
+    }
 
-          const assetFieldKeyMap: Record<
-            string,
-            { original: string; updated: string }
-          > = {
-            assetName: {
-              original: "originalAssetName",
-              updated: "updatedAssetName",
-            },
-            location: {
-              original: "originalLocation",
-              updated: "updatedLocation",
-            },
-            assetType: {
-              original: "originalAssetType",
-              updated: "updatedAssetType",
-            },
-            assetClass: {
-              original: "originalAssetClass",
-              updated: "updatedAssetClass",
-            },
-            serialNumber: {
-              original: "originalSerialNumber",
-              updated: "updatedSerialNumber",
-            },
-            manufacturer: {
-              original: "originalManufacturer",
-              updated: "updatedManufacturer",
-            },
-            model: {
-              original: "originalModel",
-              updated: "updatedModel",
-            },
-            installedDate: {
-              original: "originalInstalledDate",
-              updated: "updatedInstalledDate",
-            },
-          };
-
-            const getUpdatedFieldKey = (field: AssetField): string =>
-              assetFieldKeyMap[field.fieldName]?.updated ?? field.fieldName;
-
-            const getOriginalFieldValue = (field: AssetField): any => {
-              const sectionData = assetForm.updateAssetForm[field.section];
-              const originalKey = assetFieldKeyMap[field.fieldName]?.original;
-
-              if (!sectionData || !originalKey) {
-                return null;
-              }
-
-              return (sectionData as Record<string, any>)[originalKey] ?? null;
-            };
-
-            const getDisplayValue = (value: any): string => {
-              if (value === null || value === undefined || value === "") {
-                return "Not selected";  
-              }
-
-              if (typeof value === "object") {
-                return String(
-                  value.name ?? value.label ?? value.info ?? "Not selected"
-                );
-              }
-
-              return String(value);
-            };
+    try {
+      await refetchClientClassStructureData();
+    } catch (error) {
+      console.error("Error loading client structure data:", error);
+    }
+  }, [refetchClientClassStructureData, selectedSite?.siteName,]);
 
 
-          // =========================================================
-          // GET FIELD VALUE
-          // =========================================================
-        
-          const getFieldValue = useCallback(
-            (field: AssetField) => {
-              const sectionData = assetForm.updateAssetForm[field.section];
 
-              if (!sectionData || typeof sectionData !== "object") {
-                return "";
-              }
-
-              const updatedKey = getUpdatedFieldKey(field);
-
-              const value = (sectionData as Record<string, any>)[updatedKey];
-
-              if (value && typeof value === "object" && "name" in value) {
-                return value.name;
-              }
-
-              return value ?? "";
-            },
-            [assetForm],
-          );
+  //------------------------------  Work area Field -------------------------------------------
 
 
-  
-  
+  const [
+    getMasterDataUpdateAssetInformation,
+    {
+      data: assetInformation,
+      isLoading: isAssetInformationLoading,
+      isFetching: isAssetInformationFetching,
+      isError: isAssetInformationError,
+      error: masterDataError,
+    },
+  ] = useLazyGetMasterDataUpdateAssetInformationQuery();
+
+
+  // Insted of Save I want to use update Fild API to update the field value in backend. So I will use this function to save the field value in redux store and then call the update field API to update the value in backend.
+
+  const updateAssetField = useCallback(
+    (section: AssetSection, field: string, value: any) => {
+      dispatch(
+        assetAssetFormAction({
+          section,
+          field,
+          value,
+        }),
+      );
+    },
+    [dispatch],
+  );
+
+
+  const assetFieldKeyMap: Record<
+    string,
+    { original: string; updated: string }
+  > = {
+    assetName: {
+      original: "originalAssetName",
+      updated: "updatedAssetName",
+    },
+    location: {
+      original: "originalLocation",
+      updated: "updatedLocation",
+    },
+    assetType: {
+      original: "originalAssetType",
+      updated: "updatedAssetType",
+    },
+    assetClass: {
+      original: "originalAssetClass",
+      updated: "updatedAssetClass",
+    },
+    serialNumber: {
+      original: "originalSerialNumber",
+      updated: "updatedSerialNumber",
+    },
+    manufacturer: {
+      original: "originalManufacturer",
+      updated: "updatedManufacturer",
+    },
+    model: {
+      original: "originalModel",
+      updated: "updatedModel",
+    },
+    installedDate: {
+      original: "originalInstalledDate",
+      updated: "updatedInstalledDate",
+    },
+  };
+
+  const getUpdatedFieldKey = (field: AssetField): string =>
+    assetFieldKeyMap[field.fieldName]?.updated ?? field.fieldName;
+
+  const getOriginalFieldValue = (field: AssetField): any => {
+    const sectionData = assetForm.updateAssetForm[field.section];
+    const originalKey = assetFieldKeyMap[field.fieldName]?.original;
+
+    if (!sectionData || !originalKey) {
+      return null;
+    }
+
+    return (sectionData as Record<string, any>)[originalKey] ?? null;
+  };
+
+  const getDisplayValue = (value: any): string => {
+    if (value === null || value === undefined || value === "") {
+      return "Not selected";
+    }
+
+    if (typeof value === "object") {
+      return String(
+        value.name ?? value.label ?? value.info ?? "Not selected"
+      );
+    }
+
+    return String(value);
+  };
+
+
+  // =========================================================
+  // GET FIELD VALUE
+  // =========================================================
+
+  const getFieldValue = useCallback(
+    (field: AssetField) => {
+      const sectionData = assetForm.updateAssetForm[field.section];
+
+      if (!sectionData || typeof sectionData !== "object") {
+        return "";
+      }
+
+      const updatedKey = getUpdatedFieldKey(field);
+
+      const value = (sectionData as Record<string, any>)[updatedKey];
+
+      if (value && typeof value === "object" && "name" in value) {
+        return value.name;
+      }
+
+      return value ?? "";
+    },
+    [assetForm],
+  );
+
+
+
+
 
 
 
@@ -602,8 +602,8 @@ const uploadAssetImages = async () => {
     const original = getDisplayValue(getOriginalFieldValue(field));
     const updated = getDisplayValue(getFieldValue(field));
 
-      const isChanged =
-  normalizeValue(original) !== normalizeValue(updated);
+    const isChanged =
+      normalizeValue(original) !== normalizeValue(updated);
 
     return (
       <View className="mb-2 ">
@@ -616,8 +616,8 @@ const uploadAssetImages = async () => {
 
           <View
             className={`rounded-full border px-2 py-1 ${isChanged
-                ? "border-green-200 bg-green-50"
-                : "border-blue-200 bg-blue-50"
+              ? "border-green-200 bg-green-50"
+              : "border-blue-200 bg-blue-50"
               }`}
           >
             <AppText
@@ -661,186 +661,186 @@ const uploadAssetImages = async () => {
     );
   };
 
-        
-          // =========================================================
-          // FIELD PRESS
-          // =========================================================
-        
-        const handleFieldPress = useCallback(
-          async (field: AssetField) => {
-            setActiveField(field);
-        
-            const listFields = [
-              "assetType",
-              "manufacturer",
-              // "vendor",
-              // "priority",
-              // "workGroup",
-              // "failureClass",
-            ];
-        
-            if (listFields.includes(field.fieldName)) {
-              setIsActiveListDrawer(true);
-        
-              const requestPayload = {
-                id: field.fieldName,
-                id1: selectedSite?.orgid,
-                id2: searchParentNumber || "",
-                id21: currentUser?.siteId,
-                id22: currentUser?.userId,
-              };
-        
-              try {
+
+  // =========================================================
+  // FIELD PRESS
+  // =========================================================
+
+  const handleFieldPress = useCallback(
+    async (field: AssetField) => {
+      setActiveField(field);
+
+      const listFields = [
+        "assetType",
+        "manufacturer",
+        // "vendor",
+        // "priority",
+        // "workGroup",
+        // "failureClass",
+      ];
+
+      if (listFields.includes(field.fieldName)) {
+        setIsActiveListDrawer(true);
+
+        const requestPayload = {
+          id: field.fieldName,
+          id1: selectedSite?.orgid,
+          id2: searchParentNumber || "",
+          id21: currentUser?.siteId,
+          id22: currentUser?.userId,
+        };
+
+        try {
+          await getMasterDataUpdateAssetInformation(requestPayload).unwrap();
+        } catch (error) {
+          console.error("Master data API error:", error);
+        }
+
+        return;
+      }
+
+      switch (field.flag) {
+
+        case 4: {
+          setActiveDrawer(field.fieldName);
+          if (field.fieldName === "location") {
+            await loadLocationHierarchy();
+          } else if (field.fieldName === "AssetClass") {
+            await clientStructureData();
+          }
+        }
+          break;
+        case 5:
+        case 3:
+          setIsActiveListDrawer(true);
+          if (field.fieldName !== "Ref_Parent_Number") {
+            const requestPayload = {
+              id: field.fieldName,
+              id1: selectedSite?.orgid,
+              id2: searchParentNumber || "",
+              id21: currentUser?.siteId,
+              id22: currentUser?.userId,
+
+
+            };
+
+            try {
+              const response =
                 await getMasterDataUpdateAssetInformation(requestPayload).unwrap();
-              } catch (error) {
-                console.error("Master data API error:", error);
-              }
-        
-              return;
-            }
-            
-            switch (field.flag) {
-             
-              case 4: {
-                setActiveDrawer(field.fieldName);
-                if (field.fieldName === "location") {
-                  await loadLocationHierarchy();
-                } else if (field.fieldName === "AssetClass") {
-                  await clientStructureData();
-                }
-              }
-               break;
-              case 5:
-              case 3:
-                setIsActiveListDrawer(true);
-                if (field.fieldName !== "Ref_Parent_Number") {
-                    const requestPayload = {
-                      id: field.fieldName,
-                      id1: selectedSite?.orgid,
-                      id2: searchParentNumber || "",
-                      id21: currentUser?.siteId,
-                      id22: currentUser?.userId,
-                     
-                     
-                    };
-        
-                    try {
-                      const response =
-                        await getMasterDataUpdateAssetInformation(requestPayload).unwrap();
-                    
-                      // You can store response in drawer state here
-                      // setDrawerData(response);
-                    } catch (error) {
-                      console.error(
-                        "Master data API error:",
-                        error
-                      );
-                    }
-                }
-               break;
-        
-               case 8: {
-                setIsActivateCriticality(true);
-                 break;
-               }
-        
-              
-              case 9: {
-                setIsActiveListDrawer(true);
-               
-                const requestPayload = {
-                  id: field.fieldName,
-                  id1: selectedSite?.orgid,
-                  id2: searchParentNumber || "",
-                  id21: currentUser?.siteId,
-                  id22: currentUser?.userId,
-                };
-        
-                try {
-                  const response =
-                    await getMasterDataUpdateAssetInformation(requestPayload).unwrap();
-        
-                  // You can store response in drawer state here
-                  // setDrawerData(response);
-                } catch (error) {
-                  console.error(
-                    "Master data API error:",
-                    error
-                  );
-                }
-                break;
-              }
-        
-            
-        
-              default: {
-                setActiveDrawer(field.fieldName);
-                break;
-              }
-            }
-          },
-          [
-            loadLocationHierarchy,
-            getMasterDataUpdateAssetInformation,
-            currentUser?.siteId,
-            currentUser?.userId,
-            currentUser?.orgId,
-            searchParentNumber,
-          ]
-        );
 
-        // =========================================================
-          // DRAWER TITLE
-          // =========================================================
-        
-          const drawerTitle = useMemo(() => {
-            if (!activeField) {
-              return "Select";
+              // You can store response in drawer state here
+              // setDrawerData(response);
+            } catch (error) {
+              console.error(
+                "Master data API error:",
+                error
+              );
             }
-        
-            switch (activeField.fieldName) {
-              case "location":
-                return "Select Location";
-        
-              case "workArea":
-                return "Select Work Area";
-        
-              case "assetType":
-                return "Select Asset Type";
-        
-              case "assetClass":
-                return "Select Asset Class";
-        
-              case "priority":
-                return "Select Priority";
-        
-              case "workGroup":
-                return "Select Work Group";
-        
-              case "manufacturer":
-                return "Select Manufacturer";
-        
-              case "vendor":
-                return "Select Vendor";
-        
-              case "failureClass":
-                return "Select Failure Class";
-                
-                  case "criticality":
-                return "Select Failure Class";
-        
-              default:
-                return `Select ${activeField.label}`;
-            }
-          }, [activeField]);
-      
+          }
+          break;
+
+        case 8: {
+          setIsActivateCriticality(true);
+          break;
+        }
 
 
-            // =========================================================
-            // RENDER FIELD
-            // =========================================================
-          
-          
+        case 9: {
+          setIsActiveListDrawer(true);
+
+          const requestPayload = {
+            id: field.fieldName,
+            id1: selectedSite?.orgid,
+            id2: searchParentNumber || "",
+            id21: currentUser?.siteId,
+            id22: currentUser?.userId,
+          };
+
+          try {
+            const response =
+              await getMasterDataUpdateAssetInformation(requestPayload).unwrap();
+
+            // You can store response in drawer state here
+            // setDrawerData(response);
+          } catch (error) {
+            console.error(
+              "Master data API error:",
+              error
+            );
+          }
+          break;
+        }
+
+
+
+        default: {
+          setActiveDrawer(field.fieldName);
+          break;
+        }
+      }
+    },
+    [
+      loadLocationHierarchy,
+      getMasterDataUpdateAssetInformation,
+      currentUser?.siteId,
+      currentUser?.userId,
+      currentUser?.orgId,
+      searchParentNumber,
+    ]
+  );
+
+  // =========================================================
+  // DRAWER TITLE
+  // =========================================================
+
+  const drawerTitle = useMemo(() => {
+    if (!activeField) {
+      return "Select";
+    }
+
+    switch (activeField.fieldName) {
+      case "location":
+        return "Select Location";
+
+      case "workArea":
+        return "Select Work Area";
+
+      case "assetType":
+        return "Select Asset Type";
+
+      case "assetClass":
+        return "Select Asset Class";
+
+      case "priority":
+        return "Select Priority";
+
+      case "workGroup":
+        return "Select Work Group";
+
+      case "manufacturer":
+        return "Select Manufacturer";
+
+      case "vendor":
+        return "Select Vendor";
+
+      case "failureClass":
+        return "Select Failure Class";
+
+      case "criticality":
+        return "Select Failure Class";
+
+      default:
+        return `Select ${activeField.label}`;
+    }
+  }, [activeField]);
+
+
+
+  // =========================================================
+  // RENDER FIELD
+  // =========================================================
+
+
   const renderField = useCallback(
     (field: AssetField) => {
       const value = getFieldValue(field);
@@ -942,880 +942,879 @@ const uploadAssetImages = async () => {
       updateAssetField,
     ],
   );
-            
-
-      
 
 
 
-            // =========================================================
-            // SECTION HEADER
-            // =========================================================
-          
-            const AssetSectionHeader = useCallback(
-              ({
-                title,
-                description,
-                icon,
-                family,
-              }: {
-                title: string;
-                description: string;
-                icon: string;
-                family: IconFamily;
-              }) => {
-                return (
-                  <View className="flex-row items-center gap-3 mt-2 py-2">
-                    <View className="w-12 h-12 bg-primary-light rounded-xl items-center justify-center">
-                      <AppIcon name={icon} family={family} color="#2563EB" size={24} />
-                    </View>
-          
-                    <View className="flex-1">
-                      <Heading level={5}>{title}</Heading>
-          
-                      <AppText variant="caption">{description}</AppText>
-                    </View>
+
+
+
+  // =========================================================
+  // SECTION HEADER
+  // =========================================================
+
+  const AssetSectionHeader = useCallback(
+    ({
+      title,
+      description,
+      icon,
+      family,
+    }: {
+      title: string;
+      description: string;
+      icon: string;
+      family: IconFamily;
+    }) => {
+      return (
+        <View className="flex-row items-center gap-3 mt-2 py-2">
+          <View className="w-12 h-12 bg-primary-light rounded-xl items-center justify-center">
+            <AppIcon name={icon} family={family} color="#2563EB" size={24} />
+          </View>
+
+          <View className="flex-1">
+            <Heading level={5}>{title}</Heading>
+
+            <AppText variant="caption">{description}</AppText>
+          </View>
+        </View>
+      );
+    },
+    [],
+  );
+
+
+  // =========================================================
+  // SECTION INFORMATION
+  // =========================================================
+
+  const getSectionInformation = useCallback(
+    (
+      section: AssetSection,
+    ): {
+      title: string;
+      description: string;
+      icon: string;
+      family: IconFamily;
+    } => {
+      switch (section) {
+        case "general":
+          return {
+            title: "General Information",
+            description: "Enter the basic information about asset",
+            icon: "information-outline",
+            family: "MaterialCommunityIcons",
+          };
+
+        case "location":
+          return {
+            title: "Location Information",
+            description: "Specify where the asset is located",
+            icon: "location-outline",
+            family: "Ionicons",
+          };
+
+        case "custom":
+          return {
+            title: "Upload Photos",
+            description: "Add photos of the asset",
+            icon: "camera-outline",
+            family: "Ionicons",
+          };
+
+
+        case "classification":
+          return {
+            title: "Classification",
+            description: "Define asset classification information",
+            icon: "tag-outline",
+            family: "MaterialCommunityIcons",
+          };
+
+        case "technical":
+          return {
+            title: "Manufacturer & Technical Details",
+            description: "Enter manufacturer and technical information",
+            icon: "cog-outline",
+            family: "MaterialCommunityIcons",
+          };
+
+        // case "financial":
+        //   return {
+        //     title: "Financial Details",
+        //     description: "Enter financial information",
+        //     icon: "cash",
+        //     family: "MaterialCommunityIcons",
+        //   };
+
+        // case "lifecycle":
+        //   return {
+        //     title: "Lifecycle Information",
+        //     description: "Enter lifecycle information",
+        //     icon: "refresh",
+        //     family: "MaterialCommunityIcons",
+        //   };
+
+        default:
+          return {
+            title: "Additional Information",
+            description: "Enter additional information",
+            icon: "information",
+            family: "MaterialCommunityIcons",
+          };
+      }
+    },
+    [],
+  );
+
+  // =========================================================
+  // CURRENT STEP
+  // =========================================================
+
+  const buildReviewPayload = useCallback(() => {
+    const reviewData = {
+      general: {
+        assetName: {
+          original:
+            assetForm?.updateAssetForm?.general
+              ?.originalAssetName || "Not selected",
+
+          updated:
+            assetForm?.updateAssetForm?.general
+              ?.updatedAssetName || "Not selected",
+        },
+      },
+
+      location: {
+        location: {
+          original:
+            assetForm?.updateAssetForm?.location
+              ?.originalLocation?.name ?? "Not selected",
+
+          updated:
+            assetForm?.updateAssetForm?.location
+              ?.updatedLocation?.name ?? "Not selected",
+        },
+      },
+
+      classification: {
+        assetType: {
+          original:
+            assetForm?.updateAssetForm?.classification
+              ?.originalAssetType?.name ?? "Not selected",
+
+          updated:
+            assetForm?.updateAssetForm?.classification
+              ?.updatedAssetType?.name ?? "Not selected",
+        },
+
+        assetClass: {
+          original:
+            assetForm?.updateAssetForm?.classification
+              ?.originalAssetClass?.name ?? "Not selected",
+
+          updated:
+            assetForm?.updateAssetForm?.classification
+              ?.updatedAssetClass?.name ?? "Not selected",
+        },
+
+        serialNumber: {
+          original:
+            assetForm?.updateAssetForm?.classification
+              ?.originalSerialNumber || "Not selected",
+
+          updated:
+            assetForm?.updateAssetForm?.classification
+              ?.updatedSerialNumber || "Not selected",
+        },
+      },
+
+      technical: {
+        manufacturer: {
+          original:
+            assetForm?.updateAssetForm?.technical
+              ?.originalManufacturer?.name ?? "Not selected",
+
+          updated:
+            assetForm?.updateAssetForm?.technical
+              ?.updatedManufacturer?.name ?? "Not selected",
+        },
+
+        model: {
+          original:
+            assetForm?.updateAssetForm?.technical
+              ?.originalModel || "Not selected",
+
+          updated:
+            assetForm?.updateAssetForm?.technical
+              ?.updatedModel || "Not selected",
+        },
+
+        installedDate: {
+          original:
+            assetForm?.updateAssetForm?.technical
+              ?.originalInstalledDate ?? "Not selected",
+
+          updated:
+            assetForm?.updateAssetForm?.technical
+              ?.updatedInstalledDate ?? "Not selected",
+        },
+      },
+
+      custom: {
+        uploadedPhotosCount:
+          assetForm?.updateAssetForm?.custom
+            ?.uploadePhotos?.length ?? 0,
+      },
+    };
+
+    return reviewData;
+  }, [assetForm]);
+
+
+
+
+  //  <View className="flex-row items-center justify-between rounded-lg bg-slate-100 p-2 px-2">
+
+  //      {/*start This section represet the original and updated values of the asset fields. */}
+  //       <View className="w-1/2 flex-col gap-2 pr-2">
+  //         <AppText
+  //           variant="bodySmall"
+  //           weight="semibold"
+  //         >
+  //           Original
+  //         </AppText>
+
+  //         <AppText
+  //           className="text-slate-800"
+  //           numberOfLines={2}
+  //         >
+  //           Original value
+  //         </AppText>
+  //       </View>
+
+  //        {/*end This section represet the original and updated values of the asset fields. */}
+
+  //       {/* UPDATED */}
+  //       <View className="w-1/2 flex-col gap-2 pl-2">
+  //         <AppText
+  //           variant="bodySmall"
+  //           weight="semibold"
+  //         >
+  //           Updated
+  //         </AppText>
+
+  //         <AppText
+  //           className="text-slate-800"
+  //           numberOfLines={2}
+  //         >
+  //           Updated Value
+  //         </AppText>
+  //       </View>
+
+  //     </View>
+
+
+
+  const renderReviewScreen = useCallback(() => {
+    const reviewData = buildReviewPayload();
+    const uploadedPhotos =
+      assetForm?.updateAssetForm?.custom.uploadePhotos ?? [];
+
+    const getDisplayValue = (value: any): string => {
+      if (value === null || value === undefined || value === "") {
+        return "Not selected";
+      }
+
+      if (typeof value === "object") {
+        return String(value?.name ?? value?.label ?? "Not selected");
+      }
+
+      return String(value);
+    };
+
+    return (
+      <View className="flex-1">
+        <View className="gap-2 py-3">
+          {/* Review heading */}
+          <View className="rounded-2xl border border-slate-200 bg-slate-50 p-2 px-4">
+            <Heading level={5}>Review & Update</Heading>
+            <AppText variant="caption" className="mt-1 text-slate-500">
+              Please review the asset information before saving.
+            </AppText>
+          </View>
+
+          {Object.entries(reviewData).map(([sectionKey, sectionValue]) => {
+            const sectionConfig = getSectionInformation(
+              sectionKey as AssetSection,
+            );
+
+            const sectionTitle =
+              sectionKey === "general"
+                ? "General Information"
+                : sectionKey === "location"
+                  ? "Location"
+                  : sectionKey === "classification"
+                    ? "Classification"
+                    : sectionKey === "technical"
+                      ? "Technical Details"
+                      : `Asset Images (${uploadedPhotos.length})`;
+
+            return (
+              <View
+                key={sectionKey}
+                className="rounded-2xl border border-slate-200 bg-white p-2 px-4"
+              >
+                {/* Section header */}
+                <View className="mb-3 flex-row items-center gap-2">
+                  <View className="h-7 w-7 items-center justify-center rounded-lg bg-primary-light">
+                    <AppIcon
+                      name={sectionConfig.icon}
+                      family={sectionConfig.family}
+                      size={18}
+                      color="#2563EB"
+                    />
                   </View>
-                );
-              },
-              [],
-            );
 
+                  <AppText
+                    variant="bodyLarge"
+                    weight="semibold"
+                    className="text-slate-800"
+                  >
+                    {sectionTitle}
+                  </AppText>
+                </View>
 
-            // =========================================================
-            // SECTION INFORMATION
-            // =========================================================
-          
-            const getSectionInformation = useCallback(
-              (
-                section: AssetSection,
-              ): {
-                title: string;
-                description: string;
-                icon: string;
-                family: IconFamily;
-              } => {
-                switch (section) {
-                  case "general":
-                    return {
-                      title: "General Information",
-                      description: "Enter the basic information about asset",
-                      icon: "information-outline",
-                      family: "MaterialCommunityIcons",
-                    };
-          
-                  case "location":
-                    return {
-                      title: "Location Information",
-                      description: "Specify where the asset is located",
-                      icon: "location-outline",
-                      family: "Ionicons",
-                    };
-          
-                    case "custom":
-                    return {
-                      title: "Upload Photos",
-                      description: "Add photos of the asset",
-                      icon: "camera-outline",
-                      family: "Ionicons",
-                    };
-          
-          
-                  case "classification":
-                    return {
-                      title: "Classification",
-                      description: "Define asset classification information",
-                      icon: "tag-outline",
-                      family: "MaterialCommunityIcons",
-                    };
-          
-                  case "technical":
-                    return {
-                      title: "Manufacturer & Technical Details",
-                      description: "Enter manufacturer and technical information",
-                      icon: "cog-outline",
-                      family: "MaterialCommunityIcons",
-                    };
-          
-                  // case "financial":
-                  //   return {
-                  //     title: "Financial Details",
-                  //     description: "Enter financial information",
-                  //     icon: "cash",
-                  //     family: "MaterialCommunityIcons",
-                  //   };
-          
-                  // case "lifecycle":
-                  //   return {
-                  //     title: "Lifecycle Information",
-                  //     description: "Enter lifecycle information",
-                  //     icon: "refresh",
-                  //     family: "MaterialCommunityIcons",
-                  //   };
-          
-                  default:
-                    return {
-                      title: "Additional Information",
-                      description: "Enter additional information",
-                      icon: "information",
-                      family: "MaterialCommunityIcons",
-                    };
-                }
-              },
-              [],
-            );
-          
-            // =========================================================
-            // CURRENT STEP
-            // =========================================================
-          
-           const buildReviewPayload = useCallback(() => {
-        const reviewData = {
-            general: {
-                assetName: {
-                    original:
-                        assetForm?.updateAssetForm?.general
-                            ?.originalAssetName || "Not selected",
+                {/* Keep the existing image section */}
+                {sectionKey === "custom" ? (
+                  uploadedPhotos.length > 0 ? (
+                    <ScrollView
+                      horizontal
+                      showsHorizontalScrollIndicator={false}
+                      contentContainerStyle={{ gap: 10 }}
+                    >
+                      {uploadedPhotos.map((photo) => (
+                        <Image
+                          key={photo.id}
+                          source={{ uri: photo?.uri }}
+                          accessibilityLabel={
+                            photo.fileName ?? "Selected asset photo"
+                          }
+                          className="h-24 w-24 rounded-xl bg-slate-100"
+                          resizeMode="cover"
+                        />
+                      ))}
+                    </ScrollView>
+                  ) : (
+                    <AppText className="text-slate-500">
+                      No images selected
+                    </AppText>
+                  )
+                ) : (
+                  /* Original / Updated field rows */
+                  Object.entries(
+                    sectionValue as Record<string, any>,
+                  ).map(([fieldKey, fieldValue]) => {
+                    const originalValue = fieldValue?.original;
+                    const updatedValue = fieldValue?.updated;
 
-                    updated:
-                        assetForm?.updateAssetForm?.general
-                            ?.updatedAssetName || "Not selected",
-                },
-            },
+                    const originalDisplay =
+                      getDisplayValue(originalValue);
+                    const updatedDisplay =
+                      getDisplayValue(updatedValue);
 
-            location: {
-                location: {
-                    original:
-                        assetForm?.updateAssetForm?.location
-                            ?.originalLocation?.name ?? "Not selected",
+                    const isChanged =
+                      originalDisplay !== updatedDisplay;
 
-                    updated:
-                        assetForm?.updateAssetForm?.location
-                            ?.updatedLocation?.name ?? "Not selected",
-                },
-            },
-
-            classification: {
-                assetType: {
-                    original:
-                        assetForm?.updateAssetForm?.classification
-                            ?.originalAssetType?.name ?? "Not selected",
-
-                    updated:
-                        assetForm?.updateAssetForm?.classification
-                            ?.updatedAssetType?.name ?? "Not selected",
-                },
-
-                assetClass: {
-                    original:
-                        assetForm?.updateAssetForm?.classification
-                            ?.originalAssetClass?.name ?? "Not selected",
-
-                    updated:
-                        assetForm?.updateAssetForm?.classification
-                            ?.updatedAssetClass?.name ?? "Not selected",
-                },
-
-                serialNumber: {
-                    original:
-                        assetForm?.updateAssetForm?.classification
-                            ?.originalSerialNumber || "Not selected",
-
-                    updated:
-                        assetForm?.updateAssetForm?.classification
-                            ?.updatedSerialNumber || "Not selected",
-                },
-            },
-
-            technical: {
-                manufacturer: {
-                    original:
-                        assetForm?.updateAssetForm?.technical
-                            ?.originalManufacturer?.name ?? "Not selected",
-
-                    updated:
-                        assetForm?.updateAssetForm?.technical
-                            ?.updatedManufacturer?.name ?? "Not selected",
-                },
-
-                model: {
-                    original:
-                        assetForm?.updateAssetForm?.technical
-                            ?.originalModel || "Not selected",
-
-                    updated:
-                        assetForm?.updateAssetForm?.technical
-                            ?.updatedModel || "Not selected",
-                },
-
-                installedDate: {
-                    original:
-                        assetForm?.updateAssetForm?.technical
-                            ?.originalInstalledDate ?? "Not selected",
-
-                    updated:
-                        assetForm?.updateAssetForm?.technical
-                            ?.updatedInstalledDate ?? "Not selected",
-                },
-            },
-
-            custom: {
-                uploadedPhotosCount:
-                    assetForm?.updateAssetForm?.custom
-                        ?.uploadePhotos?.length ?? 0,
-            },
-        };
-
-        return reviewData;
-    }, [assetForm]);
-
-
-
-              
-                      //  <View className="flex-row items-center justify-between rounded-lg bg-slate-100 p-2 px-2">
-
-                      //      {/*start This section represet the original and updated values of the asset fields. */}
-                      //       <View className="w-1/2 flex-col gap-2 pr-2">
-                      //         <AppText
-                      //           variant="bodySmall"
-                      //           weight="semibold"
-                      //         >
-                      //           Original
-                      //         </AppText>
-
-                      //         <AppText
-                      //           className="text-slate-800"
-                      //           numberOfLines={2}
-                      //         >
-                      //           Original value
-                      //         </AppText>
-                      //       </View>
-
-                      //        {/*end This section represet the original and updated values of the asset fields. */}
-
-                      //       {/* UPDATED */}
-                      //       <View className="w-1/2 flex-col gap-2 pl-2">
-                      //         <AppText
-                      //           variant="bodySmall"
-                      //           weight="semibold"
-                      //         >
-                      //           Updated
-                      //         </AppText>
-
-                      //         <AppText
-                      //           className="text-slate-800"
-                      //           numberOfLines={2}
-                      //         >
-                      //           Updated Value
-                      //         </AppText>
-                      //       </View>
-
-                      //     </View>
-
-
-
-                  const renderReviewScreen = useCallback(() => {
-                    const reviewData = buildReviewPayload();
-                    const uploadedPhotos =
-                      assetForm?.updateAssetForm?.custom.uploadePhotos ?? [];
-
-                    const getDisplayValue = (value: any): string => {
-                      if (value === null || value === undefined || value === "") {
-                        return "Not selected";
-                      }
-
-                      if (typeof value === "object") {
-                        return String(value?.name ?? value?.label ?? "Not selected");
-                      }
-
-                      return String(value);
-                    };
+                    const fieldLabel = fieldKey
+                      .replace(/([A-Z])/g, " $1")
+                      .replace(/^./, (char) => char.toUpperCase());
 
                     return (
-                      <View className="flex-1">
-                        <View className="gap-2 py-3">
-                          {/* Review heading */}
-                          <View className="rounded-2xl border border-slate-200 bg-slate-50 p-2 px-4">
-                            <Heading level={5}>Review & Update</Heading>
-                            <AppText variant="caption" className="mt-1 text-slate-500">
-                              Please review the asset information before saving.
+                      <View key={fieldKey} className="mb-4">
+                        {/* Field name + change status */}
+                        <View className="mb-2 flex-row items-center justify-between">
+                          <AppText
+                            className="flex-1 text-slate-700"
+                            weight="medium"
+                          >
+                            {fieldLabel}
+                          </AppText>
+
+                          <View
+                            className={`rounded-3xl border px-3 py-1 ${isChanged
+                              ? "border-green-200 bg-green-100 "
+                              : "  border-blue-200 bg-blue-100"
+                              }`}
+                          >
+                            <AppText
+                              variant="bodySmall"
+                              weight="medium"
+                              className={
+                                isChanged
+                                  ? "text-green-800!"
+                                  : " text-blue-800!"
+                              }
+                            >
+                              {isChanged ? "Changed" : "Unchanged"}
+                            </AppText>
+                          </View>
+                        </View>
+
+                        {/* Original and Updated side by side */}
+                        <View
+                          className={`flex-row rounded-lg p-3 ${isChanged ? "bg-slate-100" : " bg-blue-50"
+                            }`}
+                        >
+                          {/* Original */}
+                          <View className="w-1/2 border-r border-slate-200 pr-3">
+                            <AppText
+                              variant="caption"
+                              className="text-slate-500"
+                            >
+                              Original value
+                            </AppText>
+
+                            <AppText
+                              className="mt-1 text-slate-800"
+                            >
+                              {originalDisplay}
                             </AppText>
                           </View>
 
-                          {Object.entries(reviewData).map(([sectionKey, sectionValue]) => {
-                            const sectionConfig = getSectionInformation(
-                              sectionKey as AssetSection,
-                            );
+                          {/* Updated */}
+                          <View className="w-1/2 pl-3">
+                            <AppText
+                              variant="caption"
+                              className={
+                                isChanged
+                                  ? "text-green-700! "
+                                  : " text-blue-600!"
+                              }
+                            >
+                              New value (Current)
+                            </AppText>
 
-                            const sectionTitle =
-                              sectionKey === "general"
-                                ? "General Information"
-                                : sectionKey === "location"
-                                  ? "Location"
-                                  : sectionKey === "classification"
-                                    ? "Classification"
-                                    : sectionKey === "technical"
-                                      ? "Technical Details"
-                                      : `Asset Images (${uploadedPhotos.length})`;
-
-                            return (
-                              <View
-                                key={sectionKey}
-                                className="rounded-2xl border border-slate-200 bg-white p-2 px-4"
-                              >
-                                {/* Section header */}
-                                <View className="mb-3 flex-row items-center gap-2">
-                                  <View className="h-7 w-7 items-center justify-center rounded-lg bg-primary-light">
-                                    <AppIcon
-                                      name={sectionConfig.icon}
-                                      family={sectionConfig.family}
-                                      size={18}
-                                      color="#2563EB"
-                                    />
-                                  </View>
-
-                                  <AppText
-                                    variant="bodyLarge"
-                                    weight="semibold"
-                                    className="text-slate-800"
-                                  >
-                                    {sectionTitle}
-                                  </AppText>
-                                </View>
-
-                                {/* Keep the existing image section */}
-                                {sectionKey === "custom" ? (
-                                  uploadedPhotos.length > 0 ? (
-                                    <ScrollView
-                                      horizontal
-                                      showsHorizontalScrollIndicator={false}
-                                      contentContainerStyle={{ gap: 10 }}
-                                    >
-                                      {uploadedPhotos.map((photo) => (
-                                        <Image
-                                          key={photo.id}
-                                          source={{ uri: photo?.uri }}
-                                          accessibilityLabel={
-                                            photo.fileName ?? "Selected asset photo"
-                                          }
-                                          className="h-24 w-24 rounded-xl bg-slate-100"
-                                          resizeMode="cover"
-                                        />
-                                      ))}
-                                    </ScrollView>
-                                  ) : (
-                                    <AppText className="text-slate-500">
-                                      No images selected
-                                    </AppText>
-                                  )
-                                ) : (
-                                  /* Original / Updated field rows */
-                                  Object.entries(
-                                    sectionValue as Record<string, any>,
-                                  ).map(([fieldKey, fieldValue]) => {
-                                    const originalValue = fieldValue?.original;
-                                    const updatedValue = fieldValue?.updated;
-
-                                    const originalDisplay =
-                                      getDisplayValue(originalValue);
-                                    const updatedDisplay =
-                                      getDisplayValue(updatedValue);
-
-                                    const isChanged =
-                                      originalDisplay !== updatedDisplay;
-
-                                    const fieldLabel = fieldKey
-                                      .replace(/([A-Z])/g, " $1")
-                                      .replace(/^./, (char) => char.toUpperCase());
-
-                                    return (
-                                      <View key={fieldKey} className="mb-4">
-                                        {/* Field name + change status */}
-                                        <View className="mb-2 flex-row items-center justify-between">
-                                          <AppText
-                                            className="flex-1 text-slate-700"
-                                            weight="medium"
-                                          >
-                                            {fieldLabel}
-                                          </AppText>
-
-                                          <View
-                                            className={`rounded-3xl border px-3 py-1 ${isChanged
-                                                ? "border-green-200 bg-green-100 "
-                                                : "  border-blue-200 bg-blue-100"
-                                              }`}
-                                          >
-                                            <AppText
-                                              variant="bodySmall"
-                                              weight="medium"
-                                              className={
-                                                isChanged
-                                                  ? "text-green-800!"
-                                                  : " text-blue-800!"
-                                              }
-                                            >
-                                              {isChanged ? "Changed" : "Unchanged"}
-                                            </AppText>
-                                          </View>
-                                        </View>
-
-                                        {/* Original and Updated side by side */}
-                                        <View
-                                          className={`flex-row rounded-lg p-3 ${isChanged ? "bg-slate-100" : " bg-blue-50"
-                                            }`}
-                                        >
-                                          {/* Original */}
-                                          <View className="w-1/2 border-r border-slate-200 pr-3">
-                                            <AppText
-                                              variant="caption"
-                                              className="text-slate-500"
-                                            >
-                                              Original value
-                                            </AppText>
-
-                                            <AppText
-                                              className="mt-1 text-slate-800"
-                                            >
-                                              {originalDisplay}
-                                            </AppText>
-                                          </View>
-
-                                          {/* Updated */}
-                                          <View className="w-1/2 pl-3">
-                                            <AppText
-                                              variant="caption"
-                                              className={
-                                                isChanged
-                                                  ? "text-green-700! "
-                                                  : " text-blue-600!"
-                                              }
-                                            >
-                                              New value (Current)
-                                            </AppText>
-
-                                            <AppText
-                                              className={
-                                                isChanged
-                                                  ? "mt-1 font-semibold text-slate-800"
-                                                  : "mt-1  text-blue-800"
-                                              }
-                                            >
-                                              {updatedDisplay}
-                                            </AppText>
-                                          </View>
-                                        </View>
-                                      </View>
-                                    );
-                                  })
-                                )}
-                              </View>
-                            );
-                          })}
+                            <AppText
+                              className={
+                                isChanged
+                                  ? "mt-1 font-semibold text-slate-800"
+                                  : "mt-1  text-blue-800"
+                              }
+                            >
+                              {updatedDisplay}
+                            </AppText>
+                          </View>
                         </View>
                       </View>
                     );
-                  }, [
-                    assetForm?.updateAssetForm,
-                    buildReviewPayload,
-                    getSectionInformation,
-                  ]);
-          
-          const renderCurrentStep = useCallback(() => {
-            if (isReviewMode) {
-              return renderReviewScreen();
-            }
-        
-            if (!currentStepData) {
-              return null;
-            }
-        
-            return (
-              <View>
-                {currentStepData.sections.map((section) => {
-                  const sectionFields = currentStepData.fields.filter(
-                    (field) => field.section === section,
-                  );
-        
-                  if (sectionFields.length === 0) {
-                    return null;
-                  }
-        
-                  const sectionInfo = getSectionInformation(section);
-        
-                  return (
-                   
-                    <View key={section} >
-                      <AssetSectionHeader
-                        title={sectionInfo.title}
-                        description={sectionInfo.description}
-                        icon={sectionInfo.icon}
-                        family={sectionInfo.family}
-                      />
-                      {sectionFields.map(renderField)}
-                    </View>
-                  );
-                })}
+                  })
+                )}
               </View>
             );
-          }, [AssetSectionHeader, currentStepData, getSectionInformation, isReviewMode, renderField, renderReviewScreen]);
+          })}
+        </View>
+      </View>
+    );
+  }, [
+    assetForm?.updateAssetForm,
+    buildReviewPayload,
+    getSectionInformation,
+  ]);
 
-          // =========================================================
-            // CONTINUE
-            // =========================================================
-          
-          const handleContinue = useCallback(() => {
-            if (currentStep < totalSteps - 1) {
-              setCurrentStep((previous) => previous + 1);
-              return;
-            }
+  const renderCurrentStep = useCallback(() => {
+    if (isReviewMode) {
+      return renderReviewScreen();
+    }
 
-            if (!isReviewMode) {
-              setIsReviewMode(true);
-              return;
-            }
+    if (!currentStepData) {
+      return null;
+    }
 
-            if (!isAssetNameValid) {
-              return;
-            }
+    return (
+      <View>
+        {currentStepData.sections.map((section) => {
+          const sectionFields = currentStepData.fields.filter(
+            (field) => field.section === section,
+          );
 
-            setIsCreateAssetConfirmationVisible(true);
-          }, [currentStep, isAssetNameValid, isReviewMode, totalSteps]);
-
-          // =========================================================
-          // BACK
-          // =========================================================
-
-        const goToPreviousScreen = useCallback(() => {
-          if (router.canGoBack()) {
-            router.back();
-          } else {
-            router.replace(APP_ROUTES.assetAssignment);
+          if (sectionFields.length === 0) {
+            return null;
           }
-        }, [router]);
-
-          const hasFormChanges = useMemo(() => {
-            // =========================================================
-            // CHECK NORMAL FORM FIELDS
-            // =========================================================
-
-            const fieldChanged = formFields.some((field) => {
-
-              if (field.section === 'custom') {
-                return false;
-              }
-
-              const original = getDisplayValue(
-                getOriginalFieldValue(field)
-              );
-
-              const updated = getDisplayValue(
-                getFieldValue(field)
-              );
-
-              return (
-                normalizeValue(original) !==
-                normalizeValue(updated)
-              );
-            });
-
-            if (fieldChanged) {
-              return true;
-            }
-
-            // =========================================================
-            // CHECK IMAGES
-            // =========================================================
 
-            const originalImages =
-              assetForm?.updateAssetForm?.custom?.uploadePhotos ?? [];
-
-            const updatedImages =
-              assetForm?.updateAssetForm?.custom?.uploadePhotos ?? [];
-
-            // Different number of images
-            if (originalImages.length !== updatedImages.length) {
-              return true;
-            }
-
-            // Compare image URI/path
-            const imagesChanged = originalImages.some(
-              (originalImage, index) => {
-
-                const updatedImage = updatedImages[index];
-
-                return (
-                  originalImage?.uri !== updatedImage?.uri
-                );
-              }
-            );
-
-            if (imagesChanged) {
-              return true;
-            }
-
-            return false;
-
-          }, [
-            formFields,
-            assetForm,
-          ]);
-
-
-          const handleBack = useCallback(() => {
-
-            // Review → previous step
-            if (isReviewMode) {
-              setIsReviewMode(false);
-              return;
-            }
-
-            // Step 3 → Step 2
-            // Step 2 → Step 1
-            if (currentStep > 0) {
-              setCurrentStep((previous) => previous - 1);
-              return;
-            }
+          const sectionInfo = getSectionInformation(section);
+
+          return (
+
+            <View key={section} >
+              <AssetSectionHeader
+                title={sectionInfo.title}
+                description={sectionInfo.description}
+                icon={sectionInfo.icon}
+                family={sectionInfo.family}
+              />
+              {sectionFields.map(renderField)}
+            </View>
+          );
+        })}
+      </View>
+    );
+  }, [AssetSectionHeader, currentStepData, getSectionInformation, isReviewMode, renderField, renderReviewScreen]);
+
+  // =========================================================
+  // CONTINUE
+  // =========================================================
+
+  const handleContinue = useCallback(() => {
+    if (currentStep < totalSteps - 1) {
+      setCurrentStep((previous) => previous + 1);
+      return;
+    }
+
+    if (!isReviewMode) {
+      setIsReviewMode(true);
+      return;
+    }
+
+    if (!isAssetNameValid) {
+      return;
+    }
+
+    setIsCreateAssetConfirmationVisible(true);
+  }, [currentStep, isAssetNameValid, isReviewMode, totalSteps]);
+
+  // =========================================================
+  // BACK
+  // =========================================================
+
+  const goToPreviousScreen = useCallback(() => {
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace(APP_ROUTES.assetAssignment);
+    }
+  }, [router]);
+
+  const hasFormChanges = useMemo(() => {
+    // =========================================================
+    // CHECK NORMAL FORM FIELDS
+    // =========================================================
+
+    const fieldChanged = formFields.some((field) => {
+
+      if (field.section === 'custom') {
+        return false;
+      }
+
+      const original = getDisplayValue(
+        getOriginalFieldValue(field)
+      );
+
+      const updated = getDisplayValue(
+        getFieldValue(field)
+      );
+
+      return (
+        normalizeValue(original) !==
+        normalizeValue(updated)
+      );
+    });
+
+    if (fieldChanged) {
+      return true;
+    }
+
+    // =========================================================
+    // CHECK IMAGES
+    // =========================================================
+
+    const originalImages =
+      assetForm?.updateAssetForm?.custom?.uploadePhotos ?? [];
+
+    const updatedImages =
+      assetForm?.updateAssetForm?.custom?.uploadePhotos ?? [];
+
+    // Different number of images
+    if (originalImages.length !== updatedImages.length) {
+      return true;
+    }
+
+    // Compare image URI/path
+    const imagesChanged = originalImages.some(
+      (originalImage, index) => {
 
-            // Step 1 → leave screen
-            if (hasFormChanges) {
+        const updatedImage = updatedImages[index];
 
-              Alert.alert(
-                'Discard Changes?',
-                'You have edited the asset information. If you go back, your changes will be reset.',
-                [
-                  {
-                    text: 'Cancel',
-                    style: 'cancel',
-                  },
-                  {
-                    text: 'Discard',
-                    style: 'destructive',
-                      onPress: () => {
-                        dispatch(resetAssetForm());
-                        goToPreviousScreen();
-                    },
-                  },
-                ],
-              );
+        return (
+          originalImage?.uri !== updatedImage?.uri
+        );
+      }
+    );
 
-              return;
-            }
+    if (imagesChanged) {
+      return true;
+    }
 
-            // No changes
-             goToPreviousScreen();
+    return false;
 
-          }, [
-            currentStep,
-            isReviewMode,
-            hasFormChanges,
-            dispatch,
-            router,
-          ]);
+  }, [
+    formFields,
+    assetForm,
+  ]);
 
-
-
-          useEffect(() => {
-            if (headerBackPressed === 0) {
-              return;
-            }
 
-            handleBack();
-
-          }, [headerBackPressed, handleBack]);
-
-
-
-       
-            // =========================================================
-            // CLOSE DRAWER
-            // =========================================================
-          
-            const closeDrawer = useCallback(() => {
-              setActiveDrawer(null);
-              setActiveField(null);
-            }, []);
-          
-            const closeListDrawer = useCallback(() => {
-              setIsActiveListDrawer(false);
-              setActiveField(null);
-            }, []);
-
-
-
-            const getAssetFieldValue = useCallback(
-              (columnName: string) => {
-                const form = assetForm?.updateAssetForm;
-
-                switch (columnName) {
-                  // --------------------------------
-                  // GENERAL
-                  // --------------------------------
-
-                  case "Name":
-                    return form?.general?.updatedAssetName ?? "";
-
-                  // --------------------------------
-                  // TECHNICAL
-                  // --------------------------------
-
-                  case "Manufacturer":
-                    return form?.technical?.updatedManufacturer?.name ?? "";
-
-                  case "MakeModel":
-                    return form?.technical?.updatedModel ?? "";
-
-                 
-
-                  case "InstalledDate":
-                    return form?.technical?.updatedInstalledDate ?? "";
-
-                  // --------------------------------
-                  // CLASSIFICATION
-                  // --------------------------------
-
-                  case "AssetType":
-                    return form?.classification?.updatedAssetType?.name ?? "";
-
-                  case "SerialNum":
-                    return form?.classification?.updatedSerialNumber ?? "";
-
-                  case "AssetClass":
-                    return form?.classification?.updatedAssetClass?.name ?? "";
-
-                 
-                  // --------------------------------
-                  // LOCATION
-                  // --------------------------------
-
-                  case "Location":
-                    return form?.location?.updatedLocation?.name ?? "";
-
-                
-                  // --------------------------------
-                  // DEFAULT
-                  // --------------------------------
-
-                  default:
-                    return "";
-                }
-              },
-              [assetForm]
-            );
-          
-          
-            // ========================================================
-             //  Update Asset
-
-                const updateSingleAssetField = async (
-                  field: typeof myAssetUpdateFields[number],
-                  assetId: string
-                ) => {
-                  const columnName =
-                    currentUser?.companyCode === "JNJ"
-                      ? field.aXColunmName
-                      : field.colunmName;
-
-                  const data = getAssetFieldValue(field.colunmName);
-
-                  const payload = {
-                    id21: Number(currentUser?.siteId),
-                    id: columnName,
-                    id1: data ?? "",
-                    id2: assetId,
-                    id22: Number(currentUser?.userId),
-                    id23: Modules.CMMSDataQuality,
-                    id24: 0,
-                    id25: 0,
-                    id3: "",
-                  };
-
-                  console.log("================================");
-                  console.log("COLUMN:", columnName);
-                  console.log("PAYLOAD:", JSON.stringify(payload, null, 2));
-
-                  try {
-                    const response =
-                      await updateAssetWalkDownDetails(payload).unwrap();
-
-                    console.log("✅ SUCCESS:", columnName);
-                    console.log("RESPONSE:", response);
-
-                    return {
-                      success: true,
-                      field: columnName,
-                    };
-
-                  } catch (error: any) {
-                    console.log("❌ ERROR:", columnName);
-                    console.log("STATUS:", error?.status);
-                    console.log("DATA:", error?.data);
-                    console.log("ERROR:", error?.error);
-                    console.log("FULL:", JSON.stringify(error, null, 2));
-
-                    return {
-                      success: false,
-                      field: columnName,
-                      error,
-                    };
-                  }
-                };
-
-              const updateNewAsset = useCallback(async () => {
-                setIsCreateAssetConfirmationVisible(false);
-
-                const assetId = String(selectedAssetData?.id ?? "").trim();
-
-                if (!assetId) {
-                  danger({
-                    title: "Update Failed",
-                    message: "Asset ID is missing.",
-                    duration: 5000,
-                  });
-                  return;
-                }
-
-                try {
-                  const results = [];
-
-                  for (const field of myAssetUpdateFields) {
-                    const result = await updateSingleAssetField(field, assetId);
-                    results.push(result);
-                  }
-
-                  console.log("FINAL RESULTS:", results);
-
-                  // Upload images
-                   await uploadAssetImages();
-
-                  // Don't show warning yet
-                  success({
-                    title: "Asset Updated",
-                    message: "Asset information and images updated successfully.",
-                    duration: 5000,
-                  });
-
-                  dispatch(resetAssetForm());
-                  router.replace(APP_ROUTES.assetAssignment);
-
-                } catch (error) {
-                  console.error("Update asset error:", error);
-
-                  danger({
-                    title: "Update Failed",
-                    message: "Unable to update asset. Please try again.",
-                    duration: 5000,
-                  });
-                }
-              }, [
-                myAssetUpdateFields,
-                selectedAssetData,
-                updateSingleAssetField,
-                uploadAssetImages,
-                success,
-                danger,
-                dispatch,
-                router,
-              ]);
+  const handleBack = useCallback(() => {
+
+    // Review → previous step
+    if (isReviewMode) {
+      setIsReviewMode(false);
+      return;
+    }
+
+    // Step 3 → Step 2
+    // Step 2 → Step 1
+    if (currentStep > 0) {
+      setCurrentStep((previous) => previous - 1);
+      return;
+    }
+
+    // Step 1 → leave screen
+    if (hasFormChanges) {
+
+      Alert.alert(
+        'Discard Changes?',
+        'You have edited the asset information. If you go back, your changes will be reset.',
+        [
+          {
+            text: 'Cancel',
+            style: 'cancel',
+          },
+          {
+            text: 'Discard',
+            style: 'destructive',
+            onPress: () => {
+              dispatch(resetAssetForm());
+              goToPreviousScreen();
+            },
+          },
+        ],
+      );
+
+      return;
+    }
+
+    // No changes
+    goToPreviousScreen();
+
+  }, [
+    currentStep,
+    isReviewMode,
+    hasFormChanges,
+    dispatch,
+    router,
+  ]);
+
+
+
+  useEffect(() => {
+    if (headerBackPressed === 0) {
+      return;
+    }
+
+    handleBack();
+
+  }, [headerBackPressed, handleBack]);
+
+
+
+
+  // =========================================================
+  // CLOSE DRAWER
+  // =========================================================
+
+  const closeDrawer = useCallback(() => {
+    setActiveDrawer(null);
+    setActiveField(null);
+  }, []);
+
+  const closeListDrawer = useCallback(() => {
+    setIsActiveListDrawer(false);
+    setActiveField(null);
+  }, []);
+
+
+
+  const getAssetFieldValue = useCallback(
+    (columnName: string) => {
+      const form = assetForm?.updateAssetForm;
+
+      switch (columnName) {
+        // --------------------------------
+        // GENERAL
+        // --------------------------------
+
+        case "Name":
+          return form?.general?.updatedAssetName ?? "";
+
+        // --------------------------------
+        // TECHNICAL
+        // --------------------------------
+
+        case "Manufacturer":
+          return form?.technical?.updatedManufacturer?.name ?? "";
+
+        case "MakeModel":
+          return form?.technical?.updatedModel ?? "";
+
+
+
+        case "InstalledDate":
+          return form?.technical?.updatedInstalledDate ?? "";
+
+        // --------------------------------
+        // CLASSIFICATION
+        // --------------------------------
+
+        case "AssetType":
+          return form?.classification?.updatedAssetType?.name ?? "";
+
+        case "SerialNum":
+          return form?.classification?.updatedSerialNumber ?? "";
+
+        case "AssetClass":
+          return form?.classification?.updatedAssetClass?.name ?? "";
+
+
+        // --------------------------------
+        // LOCATION
+        // --------------------------------
+
+        case "Location":
+          return form?.location?.updatedLocation?.name ?? "";
+
+
+        // --------------------------------
+        // DEFAULT
+        // --------------------------------
+
+        default:
+          return "";
+      }
+    },
+    [assetForm]
+  );
+
+
+  // ========================================================
+  //  Update Asset
+
+  const updateSingleAssetField = async (
+    field: typeof myAssetUpdateFields[number],
+    assetId: string
+  ) => {
+    const columnName =
+      currentUser?.companyCode === "JNJ"
+        ? field.aXColunmName
+        : field.colunmName;
+
+    const data = getAssetFieldValue(field.colunmName);
+
+    const payload = {
+      id21: Number(currentUser?.siteId),
+      id: columnName,
+      id1: data ?? "",
+      id2: assetId,
+      id22: Number(currentUser?.userId),
+      id23: Modules.CMMSDataQuality,
+      id24: 0,
+      id25: 0,
+      id3: "",
+    };
+
+    // console.log("================================");
+    // console.log("COLUMN:", columnName);
+    // console.log("PAYLOAD:", JSON.stringify(payload, null, 2));
+
+    try {
+      const response =
+        await updateAssetWalkDownDetails(payload).unwrap();
+
+      console.log("✅ SUCCESS:", columnName);
+      console.log("RESPONSE:", response);
+
+      return {
+        success: true,
+        field: columnName,
+      };
+
+    } catch (error: any) {
+      console.log("STATUS:", error?.status);
+      // console.log("DATA:", error?.data);
+      // console.log("ERROR:", error?.error);
+      // console.log("FULL:", JSON.stringify(error, null, 2));
+
+      return {
+        success: false,
+        field: columnName,
+        error,
+      };
+    }
+  };
+
+  const updateNewAsset = useCallback(async () => {
+    setIsCreateAssetConfirmationVisible(false);
+
+    const assetId = String(selectedAssetData?.id ?? "").trim();
+
+    if (!assetId) {
+      danger({
+        title: "Update Failed",
+        message: "Asset ID is missing.",
+        duration: 5000,
+      });
+      return;
+    }
+
+    try {
+      const results = [];
+
+      for (const field of myAssetUpdateFields) {
+        const result = await updateSingleAssetField(field, assetId);
+        results.push(result);
+      }
+
+      // console.log("FINAL RESULTS:", results);
+
+      // Upload images
+      await uploadAssetImages();
+
+      // Don't show warning yet
+      success({
+        title: "Asset Updated",
+        message: "Asset information and images updated successfully.",
+        duration: 5000,
+      });
+
+      dispatch(resetAssetForm());
+      router.replace(APP_ROUTES.assetAssignment);
+
+    } catch (error) {
+      console.error("Update asset error:", error);
+
+      danger({
+        title: "Update Failed",
+        message: "Unable to update asset. Please try again.",
+        duration: 5000,
+      });
+    }
+  }, [
+    myAssetUpdateFields,
+    selectedAssetData,
+    updateSingleAssetField,
+    uploadAssetImages,
+    success,
+    danger,
+    dispatch,
+    router,
+  ]);
 
   // =========================================================
   // MAIN LOADING
@@ -1855,7 +1854,7 @@ const uploadAssetImages = async () => {
                 PROGRESS
             ================================================== */}
 
-     
+
       <AppStepper
         steps={steps}
         currentStep={safeCurrentStep}
@@ -1990,7 +1989,7 @@ const uploadAssetImages = async () => {
                     showSearch={true}
                     showContinue={true}
                     showSelectedFooter={true}
-                  
+
                     onContinue={(node) => {
 
                       if (activeField) {
@@ -2043,9 +2042,9 @@ const uploadAssetImages = async () => {
                     showSearch={true}
                     showContinue={true}
                     showSelectedFooter={true}
-                   
+
                     onContinue={(node) => {
-                     
+
 
                       if (activeField) {
                         updateAssetField(
@@ -2133,52 +2132,52 @@ const uploadAssetImages = async () => {
             </View>
 
           ) : (
-                <AssetSelectionDrawer
-                  data={assetInformation ?? []}
-                  selectedId={null}
-                  title="Asset Type"
-                  showSelectedFooter={true}
-                  showContinue={true}
-                  Height={selectedListHeight}
-                  onSelect={(item) => {
-                    const selectedValue =
-                      activeField?.flag === 9
-                        ? item?.parentId
-                        : item?.info;
+            <AssetSelectionDrawer
+              data={assetInformation ?? []}
+              selectedId={null}
+              title="Asset Type"
+              showSelectedFooter={true}
+              showContinue={true}
+              Height={selectedListHeight}
+              onSelect={(item) => {
+                const selectedValue =
+                  activeField?.flag === 9
+                    ? item?.parentId
+                    : item?.info;
 
-                  }}
-                  onContinue={(item) => {
-                    const selectedValue =
-                      activeField?.flag === 9
-                        ? item?.parentId
-                        : activeField?.fieldName === "manufacturer" ||
-                            activeField?.fieldName === "assetType"
-                          ? {
-                              id: item?.id,
-                              name: item?.info ?? item?.name ?? "",
-                            }
-                        : item?.info;
+              }}
+              onContinue={(item) => {
+                const selectedValue =
+                  activeField?.flag === 9
+                    ? item?.parentId
+                    : activeField?.fieldName === "manufacturer" ||
+                      activeField?.fieldName === "assetType"
+                      ? {
+                        id: item?.id,
+                        name: item?.info ?? item?.name ?? "",
+                      }
+                      : item?.info;
 
 
-                    if (activeField) {
-                      updateAssetField(
-                        activeField.section,
-                         getUpdatedFieldKey(activeField),
-                         selectedValue
-                      );
-                    }
+                if (activeField) {
+                  updateAssetField(
+                    activeField.section,
+                    getUpdatedFieldKey(activeField),
+                    selectedValue
+                  );
+                }
 
-                    closeListDrawer();
-                  }}
-/>
+                closeListDrawer();
+              }}
+            />
           )}
 
         </View>
       </AppBottomSheet>
-  
-   
-     {/* ------------------------------------- Criticality Tabs ------------------------------------------  */}
-     
+
+
+      {/* ------------------------------------- Criticality Tabs ------------------------------------------  */}
+
       <AppBottomSheet
         visible={isActivateCriticality}
         onClose={() => setIsActivateCriticality(false)}
@@ -2193,10 +2192,10 @@ const uploadAssetImages = async () => {
         </View>
       </AppBottomSheet>
 
-        
+
 
       <AppBottomSheet
-       enableContentPanningGesture={true}
+        enableContentPanningGesture={true}
         enablePanDownToClose={false}
         visible={isCreateAssetConfirmationVisible}
         onClose={() => setIsCreateAssetConfirmationVisible(false)}
@@ -2214,7 +2213,7 @@ const uploadAssetImages = async () => {
           </View>
           <View className="flex flex-col gap-2 mt-2">
             <Button title="Yes" fullWidth onPress={updateNewAsset} />
-            <Button variant="outline" fullWidth className="border border-error"  onPress={() => setIsCreateAssetConfirmationVisible(false)}>
+            <Button variant="outline" fullWidth className="border border-error" onPress={() => setIsCreateAssetConfirmationVisible(false)}>
               <AppText className="text-error! font-bold" >Cancel</AppText>
             </Button>
           </View>

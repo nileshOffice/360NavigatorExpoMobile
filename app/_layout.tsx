@@ -1,18 +1,18 @@
 import "@/global.css";
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
-import { Stack } from "expo-router";
+import { Stack, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { Provider, useDispatch, useSelector } from "react-redux";
 import { PersistGate } from "redux-persist/integration/react";
 import { useLazyLoadApplicationDataQuery, usePingServerMutation } from "./auth/applicationApi";
+import GlobalApiAlert from "./auth/components/GlobalApiAlert";
 import { persistor, RootState, store } from "./lib/store/store";
 
 import {
   logout,
   setSessionExpired,
 } from '@/app/auth/authSlice';
-import { useRouter } from "expo-router";
 import SessionExpiredDialog from "./auth/components/SessionExpiredDialog";
 import { ToastProvider } from "./common/components/ui/toast";
 
@@ -84,12 +84,13 @@ function AppInitializer({ onReady }: { onReady: () => void }) {
   useEffect(() => {
     if (!sessionExpired) return;
 
-    SessionExpiredDialog(() => {
-      dispatch(logout());
-      dispatch(setSessionExpired(false));
+    // SessionExpiredDialog(() => {
+    //   dispatch(logout());
+    //   dispatch(setSessionExpired(false));
 
-      router.replace('/');
-    });
+    //   router.replace('/');
+    // });
+
   }, [sessionExpired, dispatch, router]);
 
   useEffect(() => {
@@ -132,6 +133,8 @@ function SessionExpiredHandler() {
 export default function RootLayout() {
   const [initialized, setInitialized] = useState(false);
 
+
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <Provider store={store}>
@@ -140,6 +143,7 @@ export default function RootLayout() {
               <ToastProvider>
 
              <SessionHeartbeat />
+            <GlobalApiAlert />
 
             {/* Always mounted */}
             <SessionExpiredHandler />

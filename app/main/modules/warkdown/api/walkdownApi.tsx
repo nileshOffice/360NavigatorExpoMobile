@@ -151,11 +151,21 @@ export const worlkdownApi = baseApi.injectEndpoints({
         }),
 
           insertAssetDocuments: builder.mutation< any, InsertAssetDocumentsRequest>({
-            query: (payload) => ({
-                url: "/api/pmo/insertAssetDocuments",
-                method: "POST",
-                body: payload,
-            }),
+            // query: (payload) => (
+            //     {
+            //     url: "/api/pmo/insertAssetDocuments",
+            //     method: "POST",
+            //     body: payload,
+            // }),
+             query: (payload) => {
+                debugger;
+
+                return {
+                    url: "/api/pmo/insertAssetDocuments",
+                    method: 'POST',
+                    body: payload,
+                };
+            },
         }), 
 
 

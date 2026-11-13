@@ -2,7 +2,6 @@ import AppIcon from '@/app/common/components/ui/AppIcon';
 import Card from '@/app/common/components/ui/Card/Card';
 import CardSkeleton from '@/app/common/components/ui/CardSkeleton';
 import { AppText } from '@/app/common/components/ui/Typography';
-import React from 'react';
 import { FlatList, View } from 'react-native';
 
 

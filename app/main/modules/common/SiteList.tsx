@@ -7,7 +7,7 @@ import { useDebounce } from '@/app/common/components/ui/generic_function/useDebo
 import SearchInput from '@/app/common/components/ui/SearchInput/SearchInput';
 import { AppText } from '@/app/common/components/ui/Typography';
 import { BottomSheetFlatList } from '@gorhom/bottom-sheet';
-import React, { useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { View } from 'react-native';
 
 

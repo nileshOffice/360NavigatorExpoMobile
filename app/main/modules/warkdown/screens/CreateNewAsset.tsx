@@ -6,7 +6,7 @@ import AppBottomSheet from "@/app/common/components/ui/bottom_sheet";
 import Screen from "@/app/common/layouts/Screen";
 import { useAppDispatch, useAppSelector } from "@/app/lib/store/hooks";
 import { RootState } from "@/app/lib/store/store";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, Image, ScrollView, useWindowDimensions, View } from "react-native";
 import {
   useGetAssetUpdateFieldByClientsQuery,
@@ -124,24 +124,7 @@ const CreateNewAsset = () => {
         (state) => state.header.backPressed
     );
 
-
-
-
-          
-
-
-  
-      useEffect(() => {
-        if (headerBackPressed === 0) {
-          return;
-        }
-
-        handleBack();
-
-      }, [headerBackPressed]);
-  
-
-
+   const lastHandledHeaderBackRef = useRef(headerBackPressed);
 
   // =========================================================
   // ASSET FIELD API DTO
@@ -1039,8 +1022,31 @@ const handleFieldPress = useCallback(
 
     if (currentStep > 0) {
       setCurrentStep((previous) => previous - 1);
+      return;
+    }
+
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace(APP_ROUTES.assetAssignment);
     }
   }, [currentStep, isReviewMode]);
+
+  useEffect(() => {
+    if (headerBackPressed === lastHandledHeaderBackRef.current) {
+      return;
+    }
+
+    lastHandledHeaderBackRef.current = headerBackPressed;
+
+    if (headerBackPressed === 0) {
+      return;
+    }
+
+    // The header emits a Redux event; handleBack applies it to the local wizard state.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    handleBack();
+  }, [headerBackPressed, handleBack]);
 
   // =========================================================
   // CLOSE DRAWER
@@ -1126,7 +1132,11 @@ const handleFieldPress = useCallback(
       });
 
       dispatch(resetAssetForm());
-      router.replace(APP_ROUTES.assetAssignment);
+      if (router.canGoBack()) {
+        router.back();
+      } else {
+        router.replace(APP_ROUTES.assetAssignment);
+      }
     } catch (error) {
       console.error(
         "Save asset error:",
@@ -1581,6 +1591,3 @@ const handleFieldPress = useCallback(
 };
 
 export default CreateNewAsset;
-
-
-

@@ -1,7 +1,7 @@
-import { ReactNode } from 'react';
-import { ViewStyle } from 'react-native';
+import { ReactNode } from "react";
+import { ViewStyle } from "react-native-css/components";
 
-export type ModalPosition = 'center' | 'bottom';
+export type ModalPosition = "center" | "bottom";
 
 export interface AppModalProps {
   visible: boolean;

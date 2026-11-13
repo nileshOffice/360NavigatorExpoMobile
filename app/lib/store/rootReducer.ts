@@ -1,5 +1,6 @@
 import { applicationApi } from "@/app/auth/applicationApi";
 import authReducer from "@/app/auth/authSlice";
+import apiErrorReducer from "@/app/common/hooks/apiErrorSlice";
 import headerReducer from "@/app/common/hooks/headerSlice";
 import moduleReducer from "@/app/common/redux/homeSlice/moduleSlice";
 
@@ -21,6 +22,8 @@ import {
 
 export const rootReducer = combineReducers({
   auth: persistReducer(persistConfig, authReducer),
+
+  apiError: apiErrorReducer,
 
   assetForm: persistReducer(assetFormPersistConfig, assetFormReducer),
 

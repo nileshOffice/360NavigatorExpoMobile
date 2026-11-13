@@ -1,7 +1,7 @@
 import AppIcon from '@/app/common/components/ui/AppIcon';
 import {
-  CameraView,
-  useCameraPermissions,
+    CameraView,
+    useCameraPermissions,
 } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
 import React, { useRef, useState } from 'react';

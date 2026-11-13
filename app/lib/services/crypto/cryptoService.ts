@@ -189,6 +189,16 @@ class CryptoService {
       return this.convertKeysToCamelCase(plainResponse);
     }
 
+    const ciphertextBytes = CryptoJS.enc.Base64.parse(encryptedResponse);
+
+    if (
+      !/^[A-Za-z0-9+/]+={0,2}$/.test(encryptedResponse) ||
+      ciphertextBytes.sigBytes === 0 ||
+      ciphertextBytes.sigBytes % 16 !== 0
+    ) {
+      return encryptedResponse;
+    }
+
     const decryptedText = CryptoJS.AES.decrypt(
       encryptedResponse,
       this.getKey(),

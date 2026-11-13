@@ -6,7 +6,7 @@ import { useAppDispatch, useAppSelector } from '@/app/lib/store/hooks';
 import { persistor } from '@/app/lib/store/store';
 import { useRouter } from 'expo-router';
 import { styled } from 'nativewind';
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 import {
     Dimensions,
     Pressable,
