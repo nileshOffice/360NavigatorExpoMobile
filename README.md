@@ -1,50 +1,64 @@
-# Welcome to your Expo app 👋
+# 360 Navigator Mobile
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Expo SDK 58 (React Native 0.88, New Architecture) app for 360 Performance
+Navigator walkdowns. **Android is the first target; iOS follows.**
 
-## Get started
+## Requirements
 
-1. Install dependencies
+- Node.js **22.13+** (SDK 58 minimum)
+- Android Studio + an emulator or a device (Android 7+), or an EAS account
+- Expo Go for SDK 58 may not be in the stores yet, so use a **development build**.
 
-   ```bash
-   npm install
-   ```
-
-2. Start the app
-
-   ```bash
-   npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
+## First-time setup
 
 ```bash
-npm run reset-project
+npm install                      # refreshes package-lock.json (unused deps were removed)
+npx expo install expo-dev-client # needed for the "development" build profile
+npx expo install --check         # aligns every Expo package with SDK 58
+npm run doctor                   # expo-doctor
+npm run typecheck
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+## Run on Android
 
-## Learn more
+Local build (needs Android Studio / SDK):
 
-To learn more about developing your project with Expo, look at the following resources:
+```bash
+npm run android        # expo run:android -> builds and installs a dev build
+npm start              # afterwards, just start Metro
+```
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+Cloud build with EAS:
 
-## Join the community
+```bash
+npm i -g eas-cli && eas login
+npm run build:android:dev       # dev client APK (install once, then `npm start`)
+npm run build:android:preview   # release-mode APK for testers
+npm run build:android:prod      # signed AAB for Google Play
+```
 
-Join our community of developers creating universal apps.
+Release builds have **R8 minification enabled by default** in SDK 58. Smoke test
+a `preview` build before submitting.
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+## Project layout
+
+```
+app/                     Expo Router routes ONLY (thin files that re-export screens)
+  _layout.tsx            providers, splash, crypto bootstrap, heartbeat
+  index.tsx              auth redirect
+  auth/                  login route group
+  main/                  signed-in Stack: index, asset-registry, my-assignment,
+                         asset-review, create-asset, update-asset
+src/
+  auth/                  login, session helpers, auth slice & API
+  common/                UI kit, header, layouts, hooks, API error handling
+  lib/                   RTK Query base (encryption + token refresh), store, crypto
+  main/modules/walkdown/ walkdown screens, API, form config, slices
+  theme/colors.ts        raw colour values (keep in sync with global.css)
+```
+
+Routes are defined in `src/common/config/routes.ts` (`APP_ROUTES`).
+
+## Before iOS
+
+See `REVIEW.md` → "iOS checklist".

@@ -1,166 +1,104 @@
 import "@/global.css";
+
+import { usePingServerMutation } from "@/src/auth/applicationApi";
+import GlobalApiAlert from "@/src/auth/components/GlobalApiAlert";
+import { ensureCryptoConfigured } from "@/src/auth/session";
+import { ToastProvider } from "@/src/common/components/ui/toast";
+import { useAppDispatch, useAppSelector } from "@/src/lib/store/hooks";
+import { persistor, store } from "@/src/lib/store/store";
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
-import { Stack, useRouter } from "expo-router";
-import { useEffect, useState } from "react";
+import { Stack } from "expo-router";
+import * as SplashScreen from "expo-splash-screen";
+import { StatusBar } from "expo-status-bar";
+import { useCallback, useEffect, useState } from "react";
+import { AppState } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { Provider, useDispatch, useSelector } from "react-redux";
+import { Provider } from "react-redux";
 import { PersistGate } from "redux-persist/integration/react";
-import { useLazyLoadApplicationDataQuery, usePingServerMutation } from "./auth/applicationApi";
-import GlobalApiAlert from "./auth/components/GlobalApiAlert";
-import { persistor, RootState, store } from "./lib/store/store";
 
-import {
-  logout,
-  setSessionExpired,
-} from '@/app/auth/authSlice';
-import SessionExpiredDialog from "./auth/components/SessionExpiredDialog";
-import { ToastProvider } from "./common/components/ui/toast";
+// Keep the native splash visible until encryption keys are loaded,
+// instead of showing a blank white screen.
+SplashScreen.preventAutoHideAsync().catch(() => {});
 
-
+const HEARTBEAT_INTERVAL_MS = 2 * 60 * 1000;
 
 function SessionHeartbeat() {
-  const currentUser = useSelector(
-    (state: RootState) => state.auth.currentUser
+  const sessionId = useAppSelector((state) => state.auth.currentUser?.sessionId);
+  const userId = useAppSelector((state) => state.auth.currentUser?.userId);
+  const roleId = useAppSelector((state) => state.auth.currentUser?.roleId);
+  const isNavigationAllowed = useAppSelector(
+    (state) => state.auth.currentUser?.isNavigationAllowed,
   );
-
-  const sessionExpired = useSelector(
-    (state: RootState) => state.auth.sessionExpired
-  );
-
   const [pingServer] = usePingServerMutation();
 
   useEffect(() => {
-    const intervalId = setInterval(() => {
-      if (sessionExpired) {
+    if (!sessionId || !isNavigationAllowed) {
+      return;
+    }
+
+    const ping = () => {
+      // Don't wake the radio while the app is in the background.
+      if (AppState.currentState !== "active") {
         return;
       }
 
-      if (
-        !currentUser?.sessionId ||
-        !currentUser?.isNavigationAllowed
-      ) {
-        return;
-      }
-
-      const idDto = {
-        id21: currentUser.sessionId,
-        id22: Number(currentUser.userId),
-        id23: Number(currentUser.roleId),
-      };
-
-      pingServer(idDto)
+      pingServer({
+        id21: sessionId,
+        id22: Number(userId),
+        id23: Number(roleId),
+      })
         .unwrap()
         .catch((error) => {
-          console.error('Heartbeat failed:', error);
+          if (__DEV__) {
+            console.warn("Heartbeat failed:", error);
+          }
         });
-    }, 120000); // 2 minutes
-
-    return () => {
-      clearInterval(intervalId);
     };
-  }, [
-    currentUser,
-    sessionExpired,
-    pingServer,
-  ]);
+
+    const intervalId = setInterval(ping, HEARTBEAT_INTERVAL_MS);
+    return () => clearInterval(intervalId);
+  }, [sessionId, userId, roleId, isNavigationAllowed, pingServer]);
 
   return null;
 }
 
-
-
-
-// Separate component so hooks run inside <Provider>
+/** Loads the AES key/IV before any screen is rendered. */
 function AppInitializer({ onReady }: { onReady: () => void }) {
-  const [loadApplicationData] = useLazyLoadApplicationDataQuery();
-
-  const sessionExpired = useSelector(
-    (state: RootState) => state.auth.sessionExpired
-  );
-
-  const dispatch = useDispatch();
-  const router = useRouter();
+  const dispatch = useAppDispatch();
 
   useEffect(() => {
-    if (!sessionExpired) return;
-
-    // SessionExpiredDialog(() => {
-    //   dispatch(logout());
-    //   dispatch(setSessionExpired(false));
-
-    //   router.replace('/');
-    // });
-
-  }, [sessionExpired, dispatch, router]);
-
-  useEffect(() => {
-    loadApplicationData()
-      .unwrap()
-      .then(() => {
-        onReady();
-      })
-      .catch(() => {
-        onReady();
-      });
-  }, []);
-
-  return null;
-}
-
-
-function SessionExpiredHandler() {
-  const sessionExpired = useSelector(
-    (state: RootState) => state.auth.sessionExpired
-  );
-
-  const dispatch = useDispatch();
-  const router = useRouter();
-
-  useEffect(() => {
-    if (!sessionExpired) return;
-
-    SessionExpiredDialog(() => {
-      dispatch(logout());
-      dispatch(setSessionExpired(false));
-
-      router.replace('/');
-    });
-  }, [sessionExpired, dispatch, router]);
+    // Ready either way: Login retries if this failed (e.g. offline).
+    ensureCryptoConfigured(dispatch).finally(onReady);
+  }, [dispatch, onReady]);
 
   return null;
 }
 
 export default function RootLayout() {
   const [initialized, setInitialized] = useState(false);
+  const handleReady = useCallback(() => setInitialized(true), []);
 
-
+  useEffect(() => {
+    if (initialized) {
+      SplashScreen.hideAsync().catch(() => {});
+    }
+  }, [initialized]);
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <Provider store={store}>
         <PersistGate loading={null} persistor={persistor}>
           <BottomSheetModalProvider>
-              <ToastProvider>
+            <ToastProvider>
+              <StatusBar style="dark" />
+              <SessionHeartbeat />
+              <GlobalApiAlert />
 
-             <SessionHeartbeat />
-            <GlobalApiAlert />
-
-            {/* Always mounted */}
-            <SessionExpiredHandler />
-
-            {!initialized && (
-              <AppInitializer
-                onReady={() => setInitialized(true)}
-              />
-            )}
-
-            {initialized && (
-              <Stack
-                screenOptions={{
-                  headerShown: false,
-                }}
-              />
-            )}
+              {initialized ? (
+                <Stack screenOptions={{ headerShown: false }} />
+              ) : (
+                <AppInitializer onReady={handleReady} />
+              )}
             </ToastProvider>
           </BottomSheetModalProvider>
         </PersistGate>

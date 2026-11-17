@@ -1,0 +1,107 @@
+From 51880edf6fe20be9cf3fb6304748bbf142a77449 Mon Sep 17 00:00:00 2001
+From: Claude <claude@local>
+Date: Mon, 16 Nov 2026 10:12:36 +0000
+Subject: [PATCH] Fix uploads under expo/fetch: add bytes() to multipart file
+ parts
+
+---
+ package.json                                  |  1 +
+ .../UploadSection/uploadFilesToRootFolder.ts  | 58 +++++++++++++++----
+ 2 files changed, 48 insertions(+), 11 deletions(-)
+
+diff --git a/package.json b/package.json
+index a834ccd..771a13a 100644
+--- a/package.json
++++ b/package.json
+@@ -27,6 +27,7 @@
+     "expo": "^58.0.0",
+     "expo-camera": "~58.0.14",
+     "expo-constants": "~58.0.15",
++    "expo-file-system": "~58.0.11",
+     "expo-font": "~58.0.11",
+     "expo-image-picker": "~58.0.10",
+     "expo-linking": "~58.0.16",
+diff --git a/src/common/components/ui/UploadSection/uploadFilesToRootFolder.ts b/src/common/components/ui/UploadSection/uploadFilesToRootFolder.ts
+index 05a7bc5..bed5f96 100644
+--- a/src/common/components/ui/UploadSection/uploadFilesToRootFolder.ts
++++ b/src/common/components/ui/UploadSection/uploadFilesToRootFolder.ts
+@@ -1,4 +1,5 @@
+ import { cryptoService } from "@/src/lib/services/crypto/cryptoService";
++import { File as ExpoFile } from "expo-file-system";
+ import { useUploadFilesToRootFolderMutation } from "@/src/main/modules/walkdown/api/walkdownApi";
+ 
+ export interface UploadFile {
+@@ -54,6 +55,39 @@ const MIME_EXTENSIONS: Record<string, string> = {
+ 
+ const MAX_FILE_SIZE = 50 * 1024 * 1024;
+ 
++/**
++ * Builds a multipart file part that works with BOTH fetch implementations.
++ *
++ * Expo SDK 56+ installs `expo/fetch` as the global fetch. Its FormData
++ * serializer only accepts strings, Blobs, or objects with `bytes()`, and
++ * throws "Unsupported FormDataPart implementation" for the classic React
++ * Native `{ uri, name, type }` object, so uploads failed on the device
++ * before any request was sent.
++ *
++ * We keep `{ uri, name, type }` (read by React Native's own fetch/XHR) and
++ * add a non-enumerable `bytes()` that reads the file with expo-file-system
++ * (read by expo/fetch). Non-enumerable so React Native's native networking
++ * still receives exactly `{ uri, name, type }`.
++ */
++const createFilePart = ({
++  uri,
++  name,
++  type,
++}: {
++  uri: string;
++  name: string;
++  type: string;
++}): Blob => {
++  const part = { uri, name, type };
++
++  Object.defineProperty(part, "bytes", {
++    enumerable: false,
++    value: () => new ExpoFile(uri).bytes(),
++  });
++
++  return part as unknown as Blob;
++};
++
+ const getBaseName = (value: string): string => {
+   const cleanPath = value.split(/[?#]/)[0];
+   let name = cleanPath.split("/").pop() || cleanPath;
+@@ -221,17 +255,19 @@ export const useUploadToFolder = () => {
+         .replace(/\s/g, "")
+         .replace(/[^A-Za-z0-9_.]+/g, "_");
+ 
+-      // React Native's FormData accepts { uri, name, type } for files.
+-      formData.append(`file${index}`, {
+-        uri: file.uri,
+-        name: companyCode === "IDC" ? fileName : sanitizedName,
+-        type:
+-          file.mimeType ||
+-          file.type ||
+-          (IMAGE_FORMATS.includes(extension)
+-            ? `image/${extension === "jpg" ? "jpeg" : extension === "svg" ? "svg+xml" : extension}`
+-            : "application/octet-stream"),
+-      } as unknown as Blob);
++      formData.append(
++        `file${index}`,
++        createFilePart({
++          uri: file.uri,
++          name: companyCode === "IDC" ? fileName : sanitizedName,
++          type:
++            file.mimeType ||
++            file.type ||
++            (IMAGE_FORMATS.includes(extension)
++              ? `image/${extension === "jpg" ? "jpeg" : extension === "svg" ? "svg+xml" : extension}`
++              : "application/octet-stream"),
++        }),
++      );
+     });
+ 
+     // Same wire format the interceptor used to produce, but built here.
+-- 
+2.43.0
+

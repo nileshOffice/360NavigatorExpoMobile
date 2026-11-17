@@ -1,0 +1,20 @@
+import { styled } from "nativewind";
+import { View } from "react-native";
+import { SafeAreaView as RNSafeAreaView } from "react-native-safe-area-context";
+
+type Props = {
+  children: React.ReactNode;
+};
+
+const SafeAreaView = styled(RNSafeAreaView);
+
+export default function AuthLayout({ children }: Props) {
+  return (
+    <SafeAreaView
+      className="flex-1 bg-background p-5"
+      edges={["top", "left", "right", "bottom"]}
+    >
+      <View className="flex-1">{children}</View>
+    </SafeAreaView>
+  );
+}

@@ -2,7 +2,6 @@
   "extends": "expo/tsconfig.base",
   "compilerOptions": {
     "strict": true,
-    
     "paths": {
       "@/*": [
         "./*"
@@ -16,5 +15,5 @@
     "expo-env.d.ts",
     "nativewind-env.d.ts",
     "types/**/*.d.ts"
-, "app/main/modules/warkdown/formConfig"  ]
+  ]
 }

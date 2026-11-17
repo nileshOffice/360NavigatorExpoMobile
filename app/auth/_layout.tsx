@@ -1,5 +1,5 @@
 import { Slot } from "expo-router";
-import AuthLayout from "../common/layouts/AuthLayout";
+import AuthLayout from "@/src/common/layouts/AuthLayout";
 
 export default function Layout() {
   return (
