@@ -308,7 +308,7 @@ const handleSiteSubmit = async (selectedSite: Site | null) => {
         size="large"
         description='Choose the site you want to continue'
      > 
-        <View className="flex-1 h-150">
+        <View className="flex-1">
           <SiteList siteList={sites} onHandleSiteList={handleSiteSubmit} isLoading={isSiteListByUserIdLoading || isSiteListByCompanyIdLoading} />
         </View>
       

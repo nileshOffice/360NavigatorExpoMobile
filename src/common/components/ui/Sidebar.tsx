@@ -11,12 +11,14 @@ import { styled } from 'nativewind';
 import { useEffect, useState } from 'react';
 import {
     ActivityIndicator,
+    Alert,
     BackHandler,
     Pressable,
     useWindowDimensions,
     View,
 } from 'react-native';
 import Animated, {
+    runOnJS,
     useAnimatedStyle,
     useSharedValue,
     withTiming,
@@ -46,6 +48,12 @@ const Sidebar = ({
     const SIDEBAR_WIDTH = Math.min(windowWidth * 0.82, 360);
     const translateX = useSharedValue(-SIDEBAR_WIDTH);
     const [isLoggingOut, setIsLoggingOut] = useState(false);
+    // Stays mounted until the slide-out animation has finished; previously
+    // the drawer disappeared instantly on close.
+    const [isMounted, setIsMounted] = useState(visible);
+    if (visible && !isMounted) {
+        setIsMounted(true);
+    }
     const overlayOpacity = useSharedValue(0);
     //------------ state Defind Here ----------------------
     const { currentUser,selectedSite } = useAppSelector((state) => state.auth);
@@ -69,6 +77,23 @@ const Sidebar = ({
         });
         return () => subscription.remove();
     }, [visible, onClose]);
+
+    const confirmLogout = () => {
+        if (isLoggingOut) return;
+        Alert.alert(
+            'Logout',
+            'Do you want to logout from this session?',
+            [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                    text: 'Logout',
+                    style: 'destructive',
+                    onPress: () => handleLogout(true),
+                },
+            ],
+            { cancelable: true },
+        );
+    };
 
     const handleLogout = async (isFullyLogout: boolean) => {
         if (isLoggingOut) return;
@@ -118,6 +143,10 @@ const Sidebar = ({
         } else {
             translateX.value = withTiming(-SIDEBAR_WIDTH, {
                 duration: 240,
+            }, (finished) => {
+                if (finished) {
+                    runOnJS(setIsMounted)(false);
+                }
             });
 
             overlayOpacity.value = withTiming(0, {
@@ -138,7 +167,7 @@ const Sidebar = ({
         opacity: overlayOpacity.value,
     }));
 
-    if (!visible) {
+    if (!isMounted) {
         return null;
     }
 
@@ -148,7 +177,11 @@ const Sidebar = ({
 
 
     return (
-        <View className="absolute inset-0 z-50 flex-row">
+        <View
+            className="absolute inset-0 z-50 flex-row"
+            // Don't block the screen while the close animation runs.
+            pointerEvents={visible ? 'auto' : 'none'}
+        >
 
             {/* Sidebar */}
             <Animated.View
@@ -192,6 +225,9 @@ const Sidebar = ({
                             {/* Close */}
                             <Pressable
                                 onPress={onClose}
+                                hitSlop={8}
+                                accessibilityRole="button"
+                                accessibilityLabel="Close menu"
                                 className="h-9 w-9 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800"
                             >
                                 <AppIcon
@@ -209,8 +245,13 @@ const Sidebar = ({
                     <View className="px-3 py-4">
 
                         {/* Profile */}
+                        {/* Profile screen is not built yet: the row is shown but not tappable. */}
                         <Pressable
                             onPress={onProfilePress}
+                            disabled={!onProfilePress}
+                            accessibilityRole="button"
+                            accessibilityLabel="My Profile"
+                            accessibilityState={{ disabled: !onProfilePress }}
                             className="mb-1 flex-row items-center rounded-xl px-3 py-3"
                         >
                             <View className="h-10 w-10 items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-800">
@@ -237,6 +278,8 @@ const Sidebar = ({
                         {/* Change Site */}
                         <Pressable
                             onPress={onSiteChangePress}
+                            accessibilityRole="button"
+                            accessibilityLabel="Change Site"
                             className="mb-1 flex-row items-center rounded-xl px-3 py-3"
                         >
                             <View className="h-10 w-10 items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-800">
@@ -272,8 +315,11 @@ const Sidebar = ({
                     <View className="mt-auto border-t border-slate-200 px-3 py-4 dark:border-slate-700">
 
                         <Pressable
-                            onPress={() => handleLogout(true)}
+                            onPress={confirmLogout}
                             disabled={isLoggingOut}
+                            accessibilityRole="button"
+                            accessibilityLabel="Logout"
+                            accessibilityState={{ disabled: isLoggingOut, busy: isLoggingOut }}
                             className="flex-row items-center rounded-xl px-3 py-3"
                         >
                             <View className="h-10 w-10 items-center justify-center rounded-lg bg-red-50 dark:bg-red-950">
@@ -306,7 +352,9 @@ const Sidebar = ({
             >
                 <Pressable
                     className="flex-1"
-                   onPress={onClose}
+                    onPress={onClose}
+                    accessibilityRole="button"
+                    accessibilityLabel="Close menu"
                 />
             </Animated.View>
 

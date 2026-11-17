@@ -6,16 +6,28 @@ import {
     StyleSheet,
     ViewStyle,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 interface KeyboardAvoidingWrapperProps {
   children: ReactNode;
   contentContainerStyle?: ViewStyle;
+  /**
+   * Height of everything above this wrapper on screen (safe area, header,
+   * padding). KeyboardAvoidingView measures itself relative to its parent,
+   * so without it the keyboard still covers the bottom of the content.
+   * Defaults to the top safe-area inset. iOS only.
+   */
+  keyboardVerticalOffset?: number;
 }
 
 const KeyboardAvoidingWrapper = ({
   children,
   contentContainerStyle,
+  keyboardVerticalOffset,
 }: KeyboardAvoidingWrapperProps) => {
+  const insets = useSafeAreaInsets();
+  const iosOffset = keyboardVerticalOffset ?? insets.top;
+
   return (
     <KeyboardAvoidingView
       style={styles.container}
@@ -23,7 +35,7 @@ const KeyboardAvoidingWrapper = ({
       // keyboard; "padding" works on both platforms. The old fixed 100px
       // Android offset left a large gap above the keyboard.
       behavior="padding"
-      keyboardVerticalOffset={0}
+      keyboardVerticalOffset={Platform.OS === "ios" ? iosOffset : 0}
     >
       <ScrollView
         contentContainerStyle={[

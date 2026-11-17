@@ -216,13 +216,14 @@ const AppDatePicker: React.FC<AppDatePickerProps> = ({
       {/* iOS Date Picker */}
       {showPicker && Platform.OS === "ios" && (
         <AppBottomSheet
-         size='dateBottomSheetSize'
+          // 35% was shorter than the header + 180pt spinner on small iPhones.
+          size="medium"
           visible={showPicker}
-           onClose={handleCancel}
-           
+          onClose={handleCancel}
         >
-          <View className="flex-1 justify-end bg-black/40">
-            <View className="rounded-t-3xl bg-white ">
+          {/* Rendered directly in the sheet: the extra dimmed wrapper and
+              second white card drew a dark band inside the sheet. */}
+          <View>
               {/* Header */}
               <View className="flex-row items-center justify-between border-b border-border-full px-4 pb-4  ">
                   <Pressable
@@ -271,7 +272,6 @@ const AppDatePicker: React.FC<AppDatePickerProps> = ({
                 }}
 
               />
-            </View>
           </View>
         </AppBottomSheet>
       )}

@@ -451,7 +451,7 @@ const UpdateDeleteAsset = () => {
                                                             </AppText>
                                                         </View>
 
-                                                        <View className={`w-[22%] flex-1 items-center rounded-3xl border p-1 px-2 ${isChanged ? 'border-amber-200 bg-amber-50' : 'border-green-200 bg-green-100'}`}>
+                                                        <View className={`ml-2 flex-1 items-center rounded-3xl border p-1 px-2 ${isChanged ? 'border-amber-200 bg-amber-50' : 'border-green-200 bg-green-100'}`}>
                                                             <AppText
                                                                 variant="bodySmall"
                                                                 weight="medium"
@@ -525,7 +525,8 @@ const UpdateDeleteAsset = () => {
                             </View>
 
                         </Button> */}
-                        <Button className=""  onPress={() => { router.push(APP_ROUTES.updateAssetDetail)}}>
+                        {/* Update and Submit share the row equally. */}
+                        <Button className="flex-1" onPress={() => { router.push(APP_ROUTES.updateAssetDetail)}}>
                             <View className="flex-row items-center justify-center gap-2">
                                 <AppIcon
                                     name="pencil-outline"
@@ -539,7 +540,7 @@ const UpdateDeleteAsset = () => {
 
                             </View>
                         </Button>
-                        <Button loading={isSubmitting} onPress={submitAsset}>
+                        <Button className="flex-1" loading={isSubmitting} onPress={submitAsset}>
                             <View className="flex-row items-center justify-center gap-2">
                                 <AppIcon
                                     name="check"

@@ -59,7 +59,7 @@ const Input = forwardRef<ComponentRef<typeof TextInput>, InputProps>(
           accessibilityRole={isPressableField ? "button" : undefined}
           accessibilityLabel={isPressableField ? label : undefined}
           className={cn(
-            "flex-row items-center rounded-full border border-border-full px-4 h-14 bg-white ",
+            "flex-row items-center rounded-full border border-border-full px-4 min-h-14 bg-white ",
 
             focused && "border-primary",
 
@@ -82,7 +82,7 @@ const Input = forwardRef<ComponentRef<typeof TextInput>, InputProps>(
             style={isPressableField ? { pointerEvents: "none" } : undefined}
             placeholderTextColor="#9CA3AF"
             className={cn(
-              "flex-1 text-md text-text-primary items-center h-12 ",
+              "flex-1 text-md text-text-primary items-center min-h-12 ",
               inputClassName
             )}
             onFocus={(e) => {

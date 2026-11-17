@@ -173,8 +173,8 @@ const Login = () => {
       <View className="flex-1 gap-y-4" style={{ zIndex: 1 }}>
         
     
-        <View className="items-center  max-w-2xl my-2" >
-          <CompanyLogo width={230} height={56} />
+        <View className="flex flex-col items-center  justify-center max-w-2xl my-2" >
+           <View className='flex flex-col items-center justify-center'><CompanyLogo width={230} height={56} /></View> 
           <AppText variant="body" className="text-center text-text-secondary ">
             Analytics-Driven EAM Performance Improvement Management
           </AppText>
@@ -265,7 +265,7 @@ const Login = () => {
           </View>
           <View
             pointerEvents="none"
-            className="absolute -bottom-32 -left-6 -right-6"
+            className="absolute -bottom-30 -left-6 -right-6"
             style={{ zIndex: 0 }}
           >
             <LoginBottom width="100%" height={96} preserveAspectRatio="xMidYMid slice" />
@@ -278,10 +278,10 @@ const Login = () => {
       </KeyboardAvoidingWrapper>
        <View
         pointerEvents="none"
-        className="absolute -bottom-7 -left-6 -right-6"
+        className=" absolute -bottom-2 -left-6 -right-6 z-50"
         style={{ zIndex: 0 }}
       >
-        <LoginBottom width="100%" height={96} preserveAspectRatio="xMidYMid slice" />
+        <LoginBottom width="100%" height={200} preserveAspectRatio="xMidYMid slice" />
       </View>
     </Screen>
   );

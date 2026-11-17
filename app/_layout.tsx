@@ -2,6 +2,7 @@ import "@/global.css";
 
 import { usePingServerMutation } from "@/src/auth/applicationApi";
 import GlobalApiAlert from "@/src/auth/components/GlobalApiAlert";
+import BootScreen from "@/src/common/components/app_components/BootScreen";
 import { ensureCryptoConfigured } from "@/src/auth/session";
 import { ToastProvider } from "@/src/common/components/ui/toast";
 import { useAppDispatch, useAppSelector } from "@/src/lib/store/hooks";
@@ -87,9 +88,12 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <Provider store={store}>
-        <PersistGate loading={null} persistor={persistor}>
-          <BottomSheetModalProvider>
-            <ToastProvider>
+        <PersistGate loading={<BootScreen />} persistor={persistor}>
+          {/* ToastProvider is outside the sheet provider so its toast is drawn
+              above any open bottom sheet (sheets render in the sheet
+              provider's own host). */}
+          <ToastProvider>
+            <BottomSheetModalProvider>
               <StatusBar style="dark" />
               <SessionHeartbeat />
               <GlobalApiAlert />
@@ -97,10 +101,14 @@ export default function RootLayout() {
               {initialized ? (
                 <Stack screenOptions={{ headerShown: false }} />
               ) : (
-                <AppInitializer onReady={handleReady} />
+                <>
+                  {/* Logo while the encryption keys load (previously blank). */}
+                  <BootScreen />
+                  <AppInitializer onReady={handleReady} />
+                </>
               )}
-            </ToastProvider>
-          </BottomSheetModalProvider>
+            </BottomSheetModalProvider>
+          </ToastProvider>
         </PersistGate>
       </Provider>
     </GestureHandlerRootView>

@@ -11,6 +11,7 @@ import { useAppDispatch, useAppSelector } from '@/src/lib/store/hooks';
 import { APP_ROUTES } from '@/src/common/config/routes';
 import { pressHeaderBack } from '@/src/common/hooks/headerSlice';
 import AppIcon from '@/src/common/components/ui/AppIcon';
+import { colors } from '@/src/theme/colors';
 
 type HeaderProps = {
     setSidebarOpen: (value: boolean) => void;
@@ -69,6 +70,7 @@ const Header = ({ setSidebarOpen }: HeaderProps) => {
                         <Pressable
                             accessibilityRole="button"
                             accessibilityLabel="Toggle menu"
+                            hitSlop={8}
                             className="h-10 w-10 items-center justify-center"
                             onPress={() => setSidebarOpen(true)}
                         >
@@ -86,6 +88,7 @@ const Header = ({ setSidebarOpen }: HeaderProps) => {
                         <Pressable
                             accessibilityRole="button"
                             accessibilityLabel="Go back"
+                            hitSlop={8}
                             className="h-10 w-10 items-center justify-center"
                             onPress={handleBack}
                         >
@@ -130,6 +133,10 @@ export default Header;
 
 const styles = StyleSheet.create({
     header: {
+        // Same colour as the screen behind it (no visual change). A shadow on a
+        // view without a background is drawn around the icons/text on iOS and
+        // not drawn at all on Android.
+        backgroundColor: colors.background,
         elevation: 10,
 
         shadowColor: 'rgba(15, 23, 42, 0.25)',

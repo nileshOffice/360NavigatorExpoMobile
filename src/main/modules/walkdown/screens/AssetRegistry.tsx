@@ -353,6 +353,8 @@ const AssetRegistry = () => {
       <View>
         <AppModal
           showCloseButton={false}
+          // The user must tap "I Agree"; tapping outside must not dismiss it.
+          closeOnBackdropPress={false}
           visible={!safetyAcknowledged}
           onClose={() =>  dispatch(setSafetyAcknowledged(false))}
           position="center"

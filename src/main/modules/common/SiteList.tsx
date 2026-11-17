@@ -10,6 +10,9 @@ import { BottomSheetFlatList } from '@gorhom/bottom-sheet';
 import { useMemo, useState } from 'react';
 import { View } from 'react-native';
 
+/** Same value as the existing `--color-primary-light` token in global.css. */
+const SELECTED_SITE_BACKGROUND = '#DBEAFE';
+
 
 type SiteListProps = {
     siteList: Site[];
@@ -89,6 +92,7 @@ const SiteList = ({ siteList ,onHandleSiteList, isLoading }: SiteListProps) => {
                 value={searchSite}
                 onChangeText={setSearchSite}
                 placeholder="Search sites"
+                inBottomSheet
             />
            </View>
 
@@ -108,7 +112,13 @@ const SiteList = ({ siteList ,onHandleSiteList, isLoading }: SiteListProps) => {
                    
                     <Card 
                         className={`mb-2 p-4 ${String(selectedSiteId) === String(item.id) ? 'bg-primary-light border-primary/35 ' : ''}`}
-                        pressable 
+                        pressable
+                        // Card sets a white background through `style`, which
+                        // overrides the bg-primary-light class above; pass the
+                        // existing primary-light token so the selection shows.
+                        style={String(selectedSiteId) === String(item.id) ? { backgroundColor: SELECTED_SITE_BACKGROUND } : undefined}
+                        accessibilityLabel={item?.siteName}
+                        accessibilityState={{ selected: String(selectedSiteId) === String(item.id) }}
                         onPress={() => setSelectedSiteId(item.id)}
                     >  
                         <View className='flex-row gap-4 items-center'>

@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { BottomSheetFlatList } from '@gorhom/bottom-sheet';
+import { BottomSheetFlatList, BottomSheetTextInput } from '@gorhom/bottom-sheet';
+import { styled } from 'nativewind';
 import {
     ActivityIndicator,
     Pressable,
-    TextInput,
     View,
 } from 'react-native';
 
@@ -11,6 +11,11 @@ import AppIcon from '@/src/common/components/ui/AppIcon';
 import Button from '@/src/common/components/ui/Button/Button';
 import { AppText } from '@/src/common/components/ui/Typography';
 import { useDebounce } from '@/src/common/components/ui/generic_function/useDebounce';
+
+// The tree is always rendered inside an AppBottomSheet (it uses
+// BottomSheetFlatList), so its search field registers with the sheet's
+// keyboard handling.
+const SheetTextInput = styled(BottomSheetTextInput);
 
 export type TreeNode = {
     id: string | number;
@@ -732,11 +737,12 @@ const AppTreeView = ({
                         color="#64748B"
                     />
 
-                    <TextInput
+                    <SheetTextInput
                         value={search}
                         onChangeText={setSearch}
                         placeholder={searchPlaceholder}
                         placeholderTextColor="#94A3B8"
+                        accessibilityLabel={searchPlaceholder}
                         className="flex-1 ml-2 text-slate-800"
                     />
 
@@ -760,13 +766,13 @@ const AppTreeView = ({
 
             {/* VIRTUALIZED TREE */}
 
+            {/* Always fills the space between the search box and the footer, so
+                the selected footer + Continue button stay pinned to the bottom
+                of the drawer (a fixed `Height` pushed them out of the sheet). */}
             <View
                 style={{
                     flex: 1,
-                    height:
-                        Height !== undefined
-                            ? Height
-                            : undefined,
+                    minHeight: 0,
                 }}
             >
                 <BottomSheetFlatList

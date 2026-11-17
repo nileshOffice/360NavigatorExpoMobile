@@ -293,6 +293,8 @@ const renderCameraModal = () => {
 
           <Pressable
             onPress={() => setIsCameraOpen(false)}
+            accessibilityRole="button"
+            accessibilityLabel="Close camera"
             className="h-11 w-11 items-center justify-center rounded-full bg-black/40"
           >
             <AppIcon
@@ -313,6 +315,8 @@ const renderCameraModal = () => {
                 current === "back" ? "front" : "back"
               );
             }}
+            accessibilityRole="button"
+            accessibilityLabel="Switch camera"
             className="h-11 w-11 items-center justify-center rounded-full bg-black/40"
           >
             <AppIcon
@@ -334,6 +338,8 @@ const renderCameraModal = () => {
 
           <Pressable
             onPress={handleCapturePhoto}
+            accessibilityRole="button"
+            accessibilityLabel="Take photo"
             className="h-20 w-20 items-center justify-center rounded-full border-4 border-white bg-white/20"
           >
             <View className="h-14 w-14 rounded-full bg-white" />
@@ -368,6 +374,8 @@ const renderImagePreviewModal = () => {
           {/* Close */}
           <Pressable
             onPress={() => setIsPreviewOpen(false)}
+            accessibilityRole="button"
+            accessibilityLabel="Close preview"
             className="h-11 w-11 items-center justify-center rounded-full bg-white/20"
           >
             <AppIcon
@@ -429,7 +437,10 @@ const renderImagePreviewModal = () => {
         />
 
         {/* Bottom Hint */}
-        <View className="absolute bottom-10 left-0 right-0 items-center">
+        <View
+          className="absolute left-0 right-0 items-center"
+          style={{ bottom: insets.bottom + 24 }}
+        >
           <Text className="text-xs text-white/70">
             Swipe left or right to view photos
           </Text>
@@ -511,6 +522,8 @@ const renderImagePreviewModal = () => {
               {/* Image */}
               <Pressable
                 onPress={() => handleImagePreview(index)}
+                accessibilityRole="imagebutton"
+                accessibilityLabel={`View photo ${index + 1}`}
               >
                 <Image
                   source={{ uri: photo.uri }}
@@ -525,6 +538,8 @@ const renderImagePreviewModal = () => {
               <Pressable
                 onPress={() => handleRemovePhoto(photo.id)}
                 hitSlop={8}
+                accessibilityRole="button"
+                accessibilityLabel={`Remove photo ${index + 1}`}
                 className="absolute -right-2 -top-2 h-7 w-7 items-center justify-center rounded-full border-2 border-white bg-slate-800"
               >
 

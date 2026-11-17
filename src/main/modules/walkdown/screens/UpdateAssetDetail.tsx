@@ -8,19 +8,20 @@ import Screen from "@/src/common/layouts/Screen";
 import { useAppDispatch, useAppSelector } from '@/src/lib/store/hooks';
 import { RootState } from '@/src/lib/store/store';
 import { formatDateForStorage, parseStoredDate } from '@/src/lib/utils';
-import { buildLocationTree } from '@/src/utils/locationTreeUtils';
-import { router } from 'expo-router';
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, Image, ScrollView, useWindowDimensions, View } from 'react-native';
 import {
-  useGetAssetUpdateFieldByClientsQuery, useGetClientClassStructureDataQuery, useGetLocationHierarchyBySidIdQuery, useInsertAssetDocumentsMutation,
+  useGetAssetUpdateFieldByClientsQuery, useGetClientClassStructureDataQuery,
   useGetFileListByObjectIdQuery,
+  useGetLocationHierarchyBySidIdQuery, useInsertAssetDocumentsMutation,
   useLazyGetMasterDataUpdateAssetInformationQuery,
   useUpdateAssetWalkDownDetailsMutation
 } from '@/src/main/modules/walkdown/api/walkdownApi';
 import AssetFormField from '@/src/main/modules/walkdown/components/AssetFormField';
 import { AssetSection } from '@/src/main/modules/walkdown/formConfig/assetForm.types';
 import { apiFieldMap, AssetField, assetStepConfig, categorySectionMap } from '@/src/main/modules/walkdown/formConfig/formConfig';
+import { buildLocationTree } from '@/src/utils/locationTreeUtils';
+import { router } from 'expo-router';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { ActivityIndicator, Alert, Image, ScrollView, useWindowDimensions, View } from 'react-native';
 
 import AppStepper from '@/src/common/components/ui/AppStepper';
 import AppTreeView from '@/src/common/components/ui/AppTreeView';
@@ -792,7 +793,7 @@ const UpdateAssetDetail = () => {
               label={field.label}
               value={String(value ?? "")}
               rightIcon={field.flag === 1}
-              type="text"
+              type={field.flag === 2 ? "number" : "text"}
               onChangeText={(text) =>
                 updateAssetField(field.section, updatedKey, text)
               }
@@ -1785,6 +1786,8 @@ const UpdateAssetDetail = () => {
         className="flex-1"
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
+        // iOS: keep the focused input above the keyboard.
+        automaticallyAdjustKeyboardInsets
         contentContainerStyle={{
           paddingVertical: 12,
           paddingBottom: 24,
@@ -2118,7 +2121,7 @@ const UpdateAssetDetail = () => {
         size="medium">
         <View>
           <View className="flex flex-col items-center justify-center gap-2">
-            <View className="w-20 h-20 rounded-full bg-warning/25 border-warning/30 border-2  flex items-center justify-center text-center">
+            <View className="w-20 h-20 rounded-full border-2 border-warning  flex items-center justify-center text-center">
               <AppIcon family="Ionicons" name="alert" size={30} color="#F59E0B" />
             </View>
 

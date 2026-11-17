@@ -262,10 +262,10 @@ const MyAssignment = () => {
                     </View>
                     <View
                         pointerEvents="none"
-                        className="absolute   -right-3 -top-5  z-9999"
+                        className="absolute   -right-3 -top-10  z-9999"
                         style={{ zIndex: 999 }}
                     >
-                        <MyAssignemnt height={100} preserveAspectRatio="xMidYMid slice" />
+                        <MyAssignemnt height={120} preserveAspectRatio="xMidYMid slice" />
                     </View>
                 </View>
 

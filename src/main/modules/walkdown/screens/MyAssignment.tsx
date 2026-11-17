@@ -1,3 +1,4 @@
+import MyAssignemnt from '@/assets/images/assignment.svg';
 import AppAccordion from '@/src/common/components/ui/AppAccordion/AppAccordion';
 import AppIcon from '@/src/common/components/ui/AppIcon';
 import Button from '@/src/common/components/ui/Button/Button';
@@ -8,13 +9,12 @@ import { useScreenHeader } from '@/src/common/hooks/useScreenHeader';
 import { assignmentSectionHeader } from '@/src/data';
 import { useAppDispatch, useAppSelector } from '@/src/lib/store/hooks';
 import { RootState } from '@/src/lib/store/store';
-import MyAssignemnt from '@/assets/images/assignment.svg';
-import { router, useLocalSearchParams } from 'expo-router';
-import { useEffect, useMemo, useState } from 'react';
-import { Text, View } from 'react-native';
 import { useGetAssetListByActivityIdQuery } from '@/src/main/modules/walkdown/api/walkdownApi';
 import ActivityAssetInsList from '@/src/main/modules/walkdown/components/ActivityAssetInsList';
 import { setSelectedAssetData } from '@/src/main/modules/walkdown/redux/walkDownSlice/selectedAssetData';
+import { router, useLocalSearchParams } from 'expo-router';
+import { useEffect, useMemo, useState } from 'react';
+import { Text, useWindowDimensions, View } from 'react-native';
 
 
 
@@ -35,6 +35,12 @@ const MyAssignment = () => {
 
 
     useScreenHeader({ title: 'My Assignment', showBack: true, showMenu: false, showLogo: false, backAction: 'goBack', });
+
+    // The expanded list keeps its 320px height on normal phones but shrinks on
+    // short screens (e.g. iPhone SE, 360x640dp Android) so the three section
+    // headers and the Add button still fit.
+    const { height: windowHeight } = useWindowDimensions();
+    const expandedListMaxHeight = Math.min(320, Math.max(180, windowHeight - 520));
 
 
     const { currentUser } = useAppSelector((state) => state.auth);
@@ -195,23 +201,27 @@ const MyAssignment = () => {
     return (
         <>
 
-            <View className='flex-1 relative'>
+            <View className='flex-1'>
+              <View className='flex-1'>
                 <View className='mb-6'>
+                    {/* Decorative image drawn first so the heading text stays on top of it on narrow screens.
+                        Kept inside the screen (top-0 / right-0): the screen container clips anything
+                        outside its edges, so negative offsets cut off the top and right of the image. */}
+                    <View
+                        pointerEvents="none"
+                        className="absolute right-0 top-0"
+                    >
+                        <MyAssignemnt height={100} preserveAspectRatio="xMidYMid slice" />
+                    </View>
                     <Heading level={4}  >My Assignments </Heading>
                     <AppText variant='label' className='mb-2'>Track and Manage all assigned assets</AppText>
-                    <View className='flex-row gap-2 items-center bg-slate-50 border-slate-300/30 p-1 border w-[35%] px-2 rounded '>
+                    {/* self-start: sizes to its text instead of a fixed 35% width that clipped on small screens. */}
+                    <View className='flex-row gap-2 items-center self-start bg-slate-50 border border-slate-300 p-1  px-2 rounded '>
 
                         <AppIcon family='Feather' name='layers' size={14} color='#2b7fff' className="text-blue-500 font-bold" />
                         <AppText variant='label'>
                             Total Asset :  <Text className='text-[#2b7fff] font-semibold'>{assignedAssetListData?.length}</Text>
                         </AppText>
-                    </View>
-                    <View
-                        pointerEvents="none"
-                        className="absolute   -right-3 -top-5  z-9999"
-                        style={{ zIndex: 999 }}
-                    >
-                        <MyAssignemnt height={100} preserveAspectRatio="xMidYMid slice" />
                     </View>
                 </View>
 
@@ -234,7 +244,7 @@ const MyAssignment = () => {
                             onToggle={() => handleSectionToggle(headerItem.key)}
                             header={
                                 <View
-                                    className={`h-20  w-full flex-row justify-between items-center px-3 ${headerItem.bgcolorHeader}`}
+                                    className={`min-h-20  w-full flex-row justify-between items-center px-3 ${headerItem.bgcolorHeader}`}
                                 >
                                     {/* LEFT */}
                                     <View className="flex-1 flex-row items-center gap-2">
@@ -285,7 +295,7 @@ const MyAssignment = () => {
                             <View className={`flex-col gap-2 py-4  p-2 ${headerItem.bgcolorBody}`}
                             >
 
-                                <View className="max-h-80">
+                                <View style={{ maxHeight: expandedListMaxHeight }}>
 
                                     <ActivityAssetInsList
                                         activityInstrumentAssetList={sectionData}
@@ -301,9 +311,12 @@ const MyAssignment = () => {
                         </AppAccordion>
                     );
                 })}
+              </View>
 
-
-                <View className="absolute bottom-2 left-0 right-0  py-3 ">
+                {/* Normal footer instead of an absolutely positioned button, so it
+                    never covers the last section or list items. AppLayout already
+                    adds the bottom safe area below it. */}
+                <View className="py-3">
                     {addAssetButton}
                 </View>
             </View>

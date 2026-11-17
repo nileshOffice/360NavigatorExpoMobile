@@ -626,7 +626,7 @@ const handleFieldPress = useCallback(
             required={field.isMandatory}
             label={field.label}
             value={value}
-            type="text"
+            type="number"
             rightIcon={null}
             onChangeText={(text) =>
               saveAssetField(field.section, field.fieldName, text)
@@ -1169,9 +1169,6 @@ const handleFieldPress = useCallback(
 
     setIsCreateAssetConfirmationVisible(false);
 
-    // Asset list as it was BEFORE saving, to spot the new row afterwards.
-    const previousAssets = cachedAssetList;
-
     const form = assetForm?.saveAssetForm;
 
     const finalString = buildAssetDataString({
@@ -1200,6 +1197,25 @@ const handleFieldPress = useCallback(
       isLocalFileUri(photo.uri),
     );
     let filePaths: string[] = [];
+
+    // Asset list as it was BEFORE saving, to spot the new row afterwards.
+    // The cache is only filled when coming from My Assignment; without it
+    // every new asset in the walkdown looks "new" and the photos cannot be
+    // linked. Fetch it now when photos need linking and it is missing.
+    let previousAssets: any[] | undefined = cachedAssetList;
+
+    if (localPhotos.length > 0 && !previousAssets) {
+      try {
+        previousAssets = await dispatch(
+          walkdownApi.endpoints.getAssetListByActivityId.initiate(assetListArgs, {
+            subscribe: false,
+          }),
+        ).unwrap();
+      } catch (error) {
+        // Not fatal: resolveCreatedAssetId still tries the response id and name.
+        if (__DEV__) console.warn("[CreateNewAsset] Pre-save asset list fetch failed:", error);
+      }
+    }
 
     if (localPhotos.length > 0) {
       try {
@@ -1291,6 +1307,7 @@ const handleFieldPress = useCallback(
     isSubmitting,
     assetForm,
     cachedAssetList,
+    assetListArgs,
     currentUser,
     selectedActivity,
     saveAssetWalkDownDetails,
@@ -1376,7 +1393,25 @@ const handleFieldPress = useCallback(
                 CURRENT STEP
             ================================================== */}
 
-      <View className="flex-1">{renderCurrentStep()}</View>
+      {/* The review step has its own ScrollView; field steps scroll here
+          (same as Update Asset) so long steps are not clipped by the footer. */}
+      {isReviewMode ? (
+        <View className="flex-1">{renderCurrentStep()}</View>
+      ) : (
+        <ScrollView
+          className="flex-1"
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          // iOS: keep the focused input above the keyboard.
+          automaticallyAdjustKeyboardInsets
+          contentContainerStyle={{
+            paddingBottom: 24,
+            flexGrow: 1,
+          }}
+        >
+          {renderCurrentStep()}
+        </ScrollView>
+      )}
 
       {/* =================================================
                 NAVIGATION

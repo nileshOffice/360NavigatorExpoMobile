@@ -1,10 +1,12 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import {
     Modal,
     Pressable,
+    ScrollView,
     StyleSheet,
     View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
     Easing,
     runOnJS,
@@ -35,9 +37,20 @@ const AppModal = ({
   const opacity = useSharedValue(0);
   const scale = useSharedValue(0.92);
   const translateY = useSharedValue(40);
+  const insets = useSafeAreaInsets();
+
+  // Keeps the native Modal mounted until the hide animation has finished.
+  // Closing is driven only by the `visible` prop: previously the content was
+  // faded out before the parent agreed to close, so a parent that kept
+  // `visible` true left an invisible Modal blocking every touch.
+  const [isRendered, setIsRendered] = useState(visible);
+  if (visible && !isRendered) {
+    setIsRendered(true);
+  }
 
   useEffect(() => {
     if (visible) {
+
       opacity.value = withTiming(1, {
         duration: animationDuration,
         easing: Easing.out(Easing.ease),
@@ -57,6 +70,10 @@ const AppModal = ({
     } else {
       opacity.value = withTiming(0, {
         duration: animationDuration,
+      }, (finished) => {
+        if (finished) {
+          runOnJS(setIsRendered)(false);
+        }
       });
 
       if (position === 'center') {
@@ -93,24 +110,9 @@ const AppModal = ({
     ],
   }));
 
+  // The parent decides whether to close; the effect above animates it out.
   const handleClose = () => {
-    opacity.value = withTiming(0, {
-      duration: animationDuration,
-    });
-
-    if (position === 'center') {
-      scale.value = withTiming(0.92, {
-        duration: animationDuration,
-      }, () => {
-        runOnJS(onClose)();
-      });
-    } else {
-      translateY.value = withTiming(40, {
-        duration: animationDuration,
-      }, () => {
-        runOnJS(onClose)();
-      });
-    }
+    onClose();
   };
 
   const modalContent = (
@@ -154,19 +156,31 @@ const AppModal = ({
         </View>
       )}
 
-      <View style={styles.content}>
+      {/* Scrolls when the content is taller than the modal (small screens,
+          large font sizes) so actions at the bottom stay reachable. */}
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={[
+          styles.content,
+          position === 'bottom' && { paddingBottom: insets.bottom + 20 },
+        ]}
+        bounces={false}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
         {children}
-      </View>
+      </ScrollView>
     </>
   );
 
   return (
     <Modal
-      visible={visible}
+      visible={isRendered}
       transparent
       animationType="none"
       onRequestClose={handleClose}
       statusBarTranslucent
+      navigationBarTranslucent
     >
       <View style={styles.overlay}>
         <Animated.View
@@ -291,6 +305,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#F3F4F6',
+  },
+
+  scroll: {
+    flexGrow: 0,
   },
 
   content: {

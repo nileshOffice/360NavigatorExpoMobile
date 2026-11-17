@@ -186,12 +186,11 @@ const AssetSelectionDrawer = ({
     }
 
     return (
+        // Fills the sheet instead of a fixed `Height`, which made the content
+        // taller than the sheet and cut off the Continue button.
         <View className="flex-1 " style={{
             flex: 1,
-            height:
-                Height !== undefined
-                    ? Height
-                    : undefined,
+            minHeight: 0,
         }}>
 
 
@@ -200,11 +199,13 @@ const AssetSelectionDrawer = ({
                     value={searchList}
                     onChangeText={setSearchList}
                     placeholder={`Search ${title}`}
+                    inBottomSheet
                 />
             </View>
 
-            {/* LIST */}
-            <View className="flex-1">
+            {/* LIST — takes all remaining space so the footer below is pinned
+                to the bottom of the drawer. */}
+            <View style={{ flex: 1, minHeight: 0 }}>
                 <BottomSheetFlatList
                     data={filteredItemListData ?? []}
                     keyExtractor={(item, index) =>
