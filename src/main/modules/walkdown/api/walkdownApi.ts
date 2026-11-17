@@ -58,6 +58,15 @@ export interface InsertAssetDocumentsRequest {
 
 
 
+export interface UpdateAssetStatusForDataCleansingRequest {
+  id21: number;
+  id22: number | null;
+  id25: number;
+  id26: number;
+  id27: number;
+  id1: string;
+}
+
 export interface GetFileListByObjectIdRequest {
     id: number | string;
     
@@ -142,7 +151,17 @@ export const walkdownApi = baseApi.injectEndpoints({
             invalidatesTags: ['AssetList'],
         }),
 
-     
+        // Submit Asset: marks the asset as completed for data cleansing.
+        updateAssetStatusForDataCleansing: builder.mutation<boolean, UpdateAssetStatusForDataCleansingRequest>({
+            query: (payload) => ({
+                url: "/api/dqa/updateAssetStatusForDataCleansing",
+                method: "POST",
+                body: payload,
+            }),
+            invalidatesTags: ['AssetList', 'ActivityList', 'AssetFields'],
+        }),
+
+
         uploadFilesToRootFolder: builder.mutation< UploadedFileResponse[], FormData>({
             query: (payload) => ({
                 url: '/api/objectImage/uploadFilesToRootFolder',
@@ -186,6 +205,7 @@ export const {
     useLazyGetMasterDataUpdateAssetInformationQuery,
     useSaveAssetWalkDownDetailsMutation,
     useUpdateAssetWalkDownDetailsMutation,
+    useUpdateAssetStatusForDataCleansingMutation,
     useInsertAssetDocumentsMutation,
     useGetFileListByObjectIdQuery,
     useLazyGetFileListByObjectIdQuery,

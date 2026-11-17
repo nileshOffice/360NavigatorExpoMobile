@@ -164,29 +164,66 @@ export const extractUploadedFilePaths = (response: unknown): string[] => {
     .filter((path): path is string => typeof path === "string" && path.trim() !== "");
 };
 
+/** Id field names the API has been seen to use (compared case-insensitively). */
+const CREATED_ID_KEYS = ["assetid", "newassetid", "id", "id21", "objectid", "insertedid"];
+
+/** Wrapper keys that may hold the real payload. */
+const RESPONSE_WRAPPER_KEYS = ["data", "result", "response", "value"];
+
 /**
  * Best-effort read of the new asset's id from saveAssetWalkDownDetails.
- * Handles a bare number/string or an object with a common id field.
+ *
+ * Handles a bare number / numeric string, a JSON string, an array (first
+ * row), an object with a common id field (any casing) and the usual
+ * `data` / `result` wrappers. Returns null when no id can be found; the
+ * caller must then resolve the id another way instead of guessing.
  */
-export const extractCreatedAssetId = (response: unknown): number | null => {
+export const extractCreatedAssetId = (response: unknown, depth = 0): number | null => {
   const toId = (value: unknown): number | null => {
+    if (typeof value !== "number" && typeof value !== "string") return null;
+    if (typeof value === "string" && value.trim() === "") return null;
     const id = Number(value);
-    return Number.isFinite(id) && id > 0 ? id : null;
+    return Number.isInteger(id) && id > 0 ? id : null;
   };
 
-  if (typeof response === "number" || typeof response === "string") {
+  if (response == null || depth > 3) {
+    return null;
+  }
+
+  if (typeof response === "number") {
     return toId(response);
   }
 
-  if (response && typeof response === "object") {
-    const body = response as Record<string, unknown>;
-    const nested =
-      body.data && typeof body.data === "object"
-        ? (body.data as Record<string, unknown>)
-        : undefined;
+  if (typeof response === "string") {
+    const text = response.trim();
+    if (text.startsWith("{") || text.startsWith("[")) {
+      try {
+        return extractCreatedAssetId(JSON.parse(text), depth + 1);
+      } catch {
+        return null;
+      }
+    }
+    return toId(text);
+  }
 
-    for (const key of ["assetId", "id", "id21", "objectId"]) {
-      const id = toId(body[key] ?? nested?.[key]);
+  if (Array.isArray(response)) {
+    return response.length > 0 ? extractCreatedAssetId(response[0], depth + 1) : null;
+  }
+
+  if (typeof response === "object") {
+    const entries = Object.entries(response as Record<string, unknown>);
+    const findValue = (keys: string[]) =>
+      keys
+        .map((key) => entries.find(([name]) => name.toLowerCase() === key)?.[1])
+        .filter((value) => value !== undefined);
+
+    for (const value of findValue(CREATED_ID_KEYS)) {
+      const id = toId(value);
+      if (id != null) return id;
+    }
+
+    for (const value of findValue(RESPONSE_WRAPPER_KEYS)) {
+      const id = extractCreatedAssetId(value, depth + 1);
       if (id != null) return id;
     }
   }

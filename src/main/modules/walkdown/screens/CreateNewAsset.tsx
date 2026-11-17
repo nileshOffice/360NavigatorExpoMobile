@@ -14,7 +14,8 @@ import {
   useGetLocationHierarchyBySidIdQuery,
   useInsertAssetDocumentsMutation,
   useLazyGetMasterDataUpdateAssetInformationQuery,
-  useSaveAssetWalkDownDetailsMutation
+  useSaveAssetWalkDownDetailsMutation,
+  walkdownApi,
   // useGetMasterDataUpdateAssetInformationQuery
 } from "@/src/main/modules/walkdown/api/walkdownApi";
 import AssetFormField from "@/src/main/modules/walkdown/components/AssetFormField";
@@ -107,6 +108,23 @@ const CreateNewAsset = () => {
    const selectedActivity = useAppSelector(
           state => state.assetWalkDown.selectedActivity
       );
+
+  // Same args as My Assignment, so this reads (and refreshes) the same cache
+  // entry. Used to find the new asset's id when the save response has none.
+  const assetListArgs = useMemo(
+    () => ({
+      id21: Number(currentUser?.companyId ?? 0),
+      id22: Number(selectedSite?.id ?? 0),
+      id23: Number(selectedActivity?.woId ?? 0),
+    }),
+    [currentUser?.companyId, selectedSite?.id, selectedActivity?.woId],
+  );
+
+  const selectCachedAssetList = useMemo(
+    () => walkdownApi.endpoints.getAssetListByActivityId.select(assetListArgs),
+    [assetListArgs],
+  );
+  const cachedAssetList = useAppSelector((state) => selectCachedAssetList(state).data);
 
 
   
@@ -1073,10 +1091,86 @@ const handleFieldPress = useCallback(
 
   const isSubmitting = isSavingAsset || isUploadingFiles || isUploadingImages;
 
+  /**
+   * Finds the id of the asset that was just saved, so photos are linked to
+   * it (the update flow links to `selectedAssetData.id`, the same list id).
+   *
+   * 1. Id from the save response, accepted only if it exists in the
+   *    walkdown's refreshed asset list (a bare `1` may just mean "success").
+   * 2. Otherwise the new asset (`isNew`) that was not in the list before
+   *    saving, narrowed by asset name.
+   *
+   * Returns null when the asset cannot be identified. The caller must then
+   * NOT link the photos, rather than attach them to the wrong record.
+   */
+  const resolveCreatedAssetId = useCallback(
+    async (
+      saveResponse: unknown,
+      assetName: string,
+      previousAssets: any[] | undefined,
+    ): Promise<number | null> => {
+      const responseId = extractCreatedAssetId(saveResponse);
+
+      let latestAssets: any[];
+      try {
+        latestAssets = await dispatch(
+          walkdownApi.endpoints.getAssetListByActivityId.initiate(assetListArgs, {
+            forceRefetch: true,
+            subscribe: false,
+          }),
+        ).unwrap();
+      } catch (error) {
+        if (__DEV__) console.warn("[CreateNewAsset] Asset list refresh failed:", error);
+        // Cannot verify; the response id is the best information left.
+        return responseId;
+      }
+
+      const assets = Array.isArray(latestAssets) ? latestAssets : [];
+
+      if (responseId != null && assets.some((asset) => Number(asset?.id) === responseId)) {
+        return responseId;
+      }
+
+      const previousIds = new Set((previousAssets ?? []).map((asset) => Number(asset?.id)));
+      const normalizedName = assetName.trim().toLowerCase();
+
+      const newAssets = assets.filter(
+        (asset) =>
+          (asset?.isNew === true || asset?.isNew === 1) &&
+          Number(asset?.id) > 0 &&
+          !previousIds.has(Number(asset?.id)),
+      );
+      const sameNameAssets = newAssets.filter(
+        (asset) => String(asset?.name ?? "").trim().toLowerCase() === normalizedName,
+      );
+
+      if (sameNameAssets.length > 0) {
+        // Several matches only if the same name was saved twice: newest wins.
+        return Math.max(...sameNameAssets.map((asset) => Number(asset.id)));
+      }
+
+      if (newAssets.length === 1) {
+        return Number(newAssets[0].id);
+      }
+
+      if (__DEV__) {
+        console.warn(
+          "[CreateNewAsset] Could not identify the new asset. Save response:",
+          saveResponse,
+        );
+      }
+      return null;
+    },
+    [assetListArgs, dispatch],
+  );
+
   const addNewAsset = useCallback(async () => {
     if (isSubmitting) return;
 
     setIsCreateAssetConfirmationVisible(false);
+
+    // Asset list as it was BEFORE saving, to spot the new row afterwards.
+    const previousAssets = cachedAssetList;
 
     const form = assetForm?.saveAssetForm;
 
@@ -1146,28 +1240,30 @@ const handleFieldPress = useCallback(
     let linkFailed = false;
 
     if (filePaths.length > 0) {
-      // The update flow links photos to the ASSET id (id21). The old create
-      // code used the walkdown activity id instead, which attached photos to
-      // the wrong record. Fall back to it only if the API returns no id.
-      const newAssetId = extractCreatedAssetId(saveResponse);
-      if (__DEV__ && newAssetId == null) {
-        console.warn(
-          "[CreateNewAsset] saveAssetWalkDownDetails returned no asset id; linking photos to the activity id. Response:",
-          saveResponse,
-        );
-      }
+      // Photos are linked to the ASSET id (id21), as in the update flow.
+      // Never fall back to the walkdown activity id: that attached the photos
+      // to the wrong record while still reporting success.
+      const newAssetId = await resolveCreatedAssetId(
+        saveResponse,
+        form?.general.assetName ?? "",
+        previousAssets,
+      );
 
-      try {
-        await insertAssetDocuments({
-          id21: Number(newAssetId ?? selectedActivity?.woId ?? 0),
-          id22: 0,
-          id32: Number(currentUser?.userId),
-          id67: "A",
-          idArrayStr: filePaths,
-        }).unwrap();
-      } catch (error) {
-        if (__DEV__) console.warn("Linking asset images failed:", error);
+      if (newAssetId == null) {
         linkFailed = true;
+      } else {
+        try {
+          await insertAssetDocuments({
+            id21: newAssetId,
+            id22: 0,
+            id32: Number(currentUser?.userId),
+            id67: "A",
+            idArrayStr: filePaths,
+          }).unwrap();
+        } catch (error) {
+          if (__DEV__) console.warn("Linking asset images failed:", error);
+          linkFailed = true;
+        }
       }
     }
 
@@ -1194,10 +1290,12 @@ const handleFieldPress = useCallback(
   }, [
     isSubmitting,
     assetForm,
+    cachedAssetList,
     currentUser,
     selectedActivity,
     saveAssetWalkDownDetails,
     uploadToFolder,
+    resolveCreatedAssetId,
     insertAssetDocuments,
     success,
     warning,

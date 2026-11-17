@@ -98,6 +98,24 @@ const findField = (fields: AssetColumn[], fieldName: string) => {
   );
 };
 
+/**
+ * Display names of mandatory fields (isMandatory === 1) that have no value,
+ * without duplicates. Same rules as the web app's submitAsset().
+ */
+export const getMissingMandatoryFields = (fields: AssetColumn[] = []): string[] => {
+  const missingFields = fields
+    .filter(
+      (item) =>
+        item.isMandatory === 1 &&
+        (item.colunmNameData === null ||
+          item.colunmNameData === undefined ||
+          String(item.colunmNameData).trim() === ""),
+    )
+    .map((item) => item.displayColnumName);
+
+  return [...new Set(missingFields)];
+};
+
 export const mapSelectedAssetUpdatedToForm = (
   apiData: AssetColumn[],
 ): UpdatedAssetForm => {

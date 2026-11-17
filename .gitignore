@@ -2,6 +2,7 @@
 
 # dependencies
 node_modules/
+/PROJECT_ANALYSIS
 
 # Expo
 .expo/
@@ -44,3 +45,4 @@ app-example
 
 # env
 .env
+PROJECT_ANALYSIS.md

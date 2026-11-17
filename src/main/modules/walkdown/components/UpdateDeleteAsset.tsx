@@ -1,19 +1,20 @@
 
 import AppIcon, { IconFamily } from '@/src/common/components/ui/AppIcon';
 import Button from '@/src/common/components/ui/Button/Button';
+import { useToast } from '@/src/common/components/ui/toast/ToastProvider';
 import { AppText } from '@/src/common/components/ui/Typography';
 import { APP_ROUTES } from '@/src/common/config/routes';
 import { Modules } from '@/src/common/constants/global_enum';
 import { useScreenHeader } from '@/src/common/hooks/useScreenHeader';
 import { useAppDispatch, useAppSelector } from '@/src/lib/store/hooks';
 import { RootState } from '@/src/lib/store/store';
-import { router, useFocusEffect } from 'expo-router';
-import { useCallback, useMemo } from 'react';
-import { ActivityIndicator, Image, ScrollView, View } from 'react-native';
-import { useGetAssetUpdateFieldByClientsQuery, useGetFileListByObjectIdQuery } from '@/src/main/modules/walkdown/api/walkdownApi';
+import { useGetAssetUpdateFieldByClientsQuery, useGetFileListByObjectIdQuery, useUpdateAssetStatusForDataCleansingMutation, walkdownApi } from '@/src/main/modules/walkdown/api/walkdownApi';
 import { AssetSection } from '@/src/main/modules/walkdown/formConfig/assetForm.types';
-import { mapSelectedAssetUpdatedToForm } from '@/src/main/modules/walkdown/formConfig/formConfig';
+import { getMissingMandatoryFields, mapSelectedAssetUpdatedToForm } from '@/src/main/modules/walkdown/formConfig/formConfig';
 import { setUpdateAssetForm } from '@/src/main/modules/walkdown/redux/walkDownSlice/assetFormSlice';
+import { router, useFocusEffect } from 'expo-router';
+import { useCallback, useMemo, useState } from 'react';
+import { ActivityIndicator, Image, ScrollView, View } from 'react-native';
 
 
 
@@ -95,6 +96,79 @@ const UpdateDeleteAsset = () => {
     useFocusEffect(hydrateForm);
 
     const isPreparing = !!assetId && (isFieldsLoading || isImagesLoading);
+
+    // =========================================================
+    // SUBMIT ASSET
+    // =========================================================
+
+    const { danger, success } = useToast();
+    const [updateAssetStatusForDataCleansing] = useUpdateAssetStatusForDataCleansingMutation();
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const companyId = Number(currentUser?.companyId);
+    const siteId = Number(currentUser?.siteId);
+    const userId = Number(currentUser?.userId);
+
+    const submitAsset = useCallback(async () => {
+        if (isSubmitting || !assetId) return;
+        setIsSubmitting(true);
+
+        try {
+            // Validate against the server's current values: the cached fields
+            // can be stale right after the asset was edited on the update screen.
+            const latestFields = await dispatch(
+                walkdownApi.endpoints.getAssetUpdateFieldByClients.initiate(fieldApiDto, {
+                    forceRefetch: true,
+                    subscribe: false,
+                }),
+            ).unwrap();
+
+            const missingFields = getMissingMandatoryFields(latestFields);
+            if (missingFields.length > 0) {
+                danger({
+                    title: "Mandatory Fields Missing",
+                    message: `${missingFields.join(", ")} field(s) are mandatory. Please fill all mandatory fields before completing the selected assets.`,
+                    duration: 6000,
+                });
+                return;
+            }
+
+            const isCompleted = await updateAssetStatusForDataCleansing({
+                id21: 3,
+                id22: null,
+                id25: companyId,
+                id26: siteId,
+                id27: userId,
+                id1: assetId.toString(),
+            }).unwrap();
+
+            if (isCompleted === false) {
+                throw new Error("Server returned false");
+            }
+
+            success({
+                title: "Asset Submitted",
+                message: "Completed successfully!",
+                duration: 5000,
+            });
+
+            // Back to the list (refreshed through the invalidated tags).
+            if (router.canDismiss()) {
+                router.dismissTo(APP_ROUTES.assetAssignment);
+            } else {
+                router.replace(APP_ROUTES.assetAssignment);
+            }
+        } catch (error) {
+            if (__DEV__) console.warn("Submit asset error:", error);
+
+            danger({
+                title: "Submit Failed",
+                message: "Unable to submit asset. Please try again.",
+                duration: 5000,
+            });
+        } finally {
+            setIsSubmitting(false);
+        }
+    }, [isSubmitting, assetId, dispatch, fieldApiDto, danger, success, updateAssetStatusForDataCleansing, companyId, siteId, userId]);
 
     // =========================================================
     // SECTION INFORMATION
@@ -280,7 +354,7 @@ const UpdateDeleteAsset = () => {
                     showsVerticalScrollIndicator={false}
                     contentContainerStyle={{
                         paddingVertical: 12,
-                        paddingBottom: 24,
+                        paddingBottom: 20,
                         flexGrow: 1,
                     }}
                     style={{ flex: 1 }}
@@ -291,7 +365,7 @@ const UpdateDeleteAsset = () => {
                         <AppText variant="caption" className="mt-1 text-slate-500">
                             Please review the asset information before saving.
                         </AppText>
-                    </View> */}
+                        </View> */}
 
                         {Object.entries(reviewData).map(([sectionKey, sectionValue]) => {
                             const sectionConfig = getSectionInformation(sectionKey as AssetSection);
@@ -439,7 +513,7 @@ const UpdateDeleteAsset = () => {
                 <View className=" flex-col gap-3 py-3">
                     <View className="flex-row gap-3 justify-around">
                         {/* TODO: no delete endpoint wired yet - disabled instead of a dead button. */}
-                        <Button variant="outline" className="border border-error" disabled>
+                        {/* <Button variant="outline" className="border border-error" disabled>
                             <View className="flex-row items-center justify-center gap-2">
                                 <AppIcon
                                     name="trash-can-outline"
@@ -450,7 +524,7 @@ const UpdateDeleteAsset = () => {
                                 <AppText className="text-error! font-bold" >Delete Asset</AppText>
                             </View>
 
-                        </Button>
+                        </Button> */}
                         <Button className=""  onPress={() => { router.push(APP_ROUTES.updateAssetDetail)}}>
                             <View className="flex-row items-center justify-center gap-2">
                                 <AppIcon
@@ -465,22 +539,22 @@ const UpdateDeleteAsset = () => {
 
                             </View>
                         </Button>
-                    </View>
-                    {/* TODO: no submit endpoint wired yet - disabled instead of a dead button. */}
-                    <Button disabled>
-                        <View className="flex-row items-center justify-center gap-2">
-                            <AppIcon
-                                name="check"
-                                family="MaterialCommunityIcons"
-                                color="#fff"
-                                size={20}
-                            />
-                            <AppText variant="body" weight="semibold" className="text-white">
-                                Submit Asset
-                            </AppText>
+                        <Button loading={isSubmitting} onPress={submitAsset}>
+                            <View className="flex-row items-center justify-center gap-2">
+                                <AppIcon
+                                    name="check"
+                                    family="MaterialCommunityIcons"
+                                    color="#fff"
+                                    size={20}
+                                />
+                                <AppText variant="body" weight="semibold" className="text-white">
+                                    Submit Asset
+                                </AppText>
 
-                        </View>
-                    </Button>
+                            </View>
+                        </Button>
+                    </View>
+                   
 
                 </View>
             </>
@@ -489,7 +563,7 @@ const UpdateDeleteAsset = () => {
 
 
         );
-    }, [assetForm?.updateAssetForm?.custom.uploadePhotos, buildReviewPayload, getSectionInformation]);
+    }, [assetForm?.updateAssetForm?.custom.uploadePhotos, buildReviewPayload, getSectionInformation, isSubmitting, submitAsset]);
 
 
 

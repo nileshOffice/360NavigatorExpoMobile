@@ -168,7 +168,7 @@ const ModuleList = ({
 
         return (
           <Card
-            className="mb-3 border-t border-r border-b border-slate-200/50 bg-card/80 p-4 shadow!"
+            className="mb-3 p-4"
             pressable={true}
             onPress={() => onHandleModuleList(item)}
             style={{
