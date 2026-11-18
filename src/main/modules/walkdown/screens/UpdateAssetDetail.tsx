@@ -13,7 +13,8 @@ import {
   useGetFileListByObjectIdQuery,
   useGetLocationHierarchyBySidIdQuery, useInsertAssetDocumentsMutation,
   useLazyGetMasterDataUpdateAssetInformationQuery,
-  useUpdateAssetWalkDownDetailsMutation
+  useUpdateAssetWalkDownDetailsMutation,
+  walkdownApi
 } from '@/src/main/modules/walkdown/api/walkdownApi';
 import AssetFormField from '@/src/main/modules/walkdown/components/AssetFormField';
 import { AssetSection } from '@/src/main/modules/walkdown/formConfig/assetForm.types';
@@ -73,6 +74,20 @@ const UpdateAssetDetail = () => {
   const selectedActivity = useAppSelector(
     state => state.assetWalkDown.selectedActivity
   );
+
+  // Same args as My Assignment, so the refresh below updates its cache entry.
+  const assetListArgs = useMemo(
+    () => ({
+      id21: Number(currentUser?.companyId ?? 0),
+      id22: Number(selectedSite?.id ?? 0),
+      id23: Number(selectedActivity?.woId ?? 0),
+    }),
+    [currentUser?.companyId, selectedSite?.id, selectedActivity?.woId],
+  );
+
+  // True for the whole save (fields → photos → refresh list); drives the
+  // spinner on the Update Asset button.
+  const [isSaving, setIsSaving] = useState(false);
   const [fileFormatErrorMessage, setFileFormatErrorMessage] = useState(false)
 
 
@@ -1464,6 +1479,8 @@ const UpdateAssetDetail = () => {
 
 
   const handleBack = useCallback(() => {
+    // Ignore back while saving: leaving mid-save hides the result.
+    if (isSaving) return;
 
     // Review → previous step
     if (isReviewMode) {
@@ -1510,6 +1527,7 @@ const UpdateAssetDetail = () => {
     currentStep,
     isReviewMode,
     hasFormChanges,
+    isSaving,
     dispatch,
     router,
   ]);
@@ -1655,7 +1673,6 @@ const UpdateAssetDetail = () => {
     return myAssetUpdateFields.filter((item) => changedFieldIds.has(item.id as number));
   };
 
-  const [isSaving, setIsSaving] = useState(false);
 
   const updateNewAsset = async () => {
     if (isSaving) return;
@@ -1712,6 +1729,20 @@ const UpdateAssetDetail = () => {
         message: "Asset information and images updated successfully.",
         duration: 5000,
       });
+
+      // Reload the asset list BEFORE leaving, so My Assignment opens with the
+      // updated asset instead of the old cached list.
+      try {
+        await dispatch(
+          walkdownApi.endpoints.getAssetListByActivityId.initiate(assetListArgs, {
+            forceRefetch: true,
+            subscribe: false,
+          }),
+        ).unwrap();
+      } catch (error) {
+        // Not fatal: My Assignment still refetches on its own.
+        if (__DEV__) console.warn("[UpdateAssetDetail] Asset list refresh failed:", error);
+      }
 
       dispatch(resetUpdateAssetForm());
       // Go back to the list instead of stacking a second copy of it.
@@ -1826,6 +1857,7 @@ const UpdateAssetDetail = () => {
           <Button
             fullWidth={currentStep === 0}
             disabled={isReviewMode && !isAssetNameValid}
+            loading={isReviewMode && isSaving}
             className={currentStep > 0 ? "flex-1" : ""}
             onPress={handleContinue}
           >

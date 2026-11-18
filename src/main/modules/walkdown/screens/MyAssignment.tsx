@@ -14,7 +14,7 @@ import ActivityAssetInsList from '@/src/main/modules/walkdown/components/Activit
 import { setSelectedAssetData } from '@/src/main/modules/walkdown/redux/walkDownSlice/selectedAssetData';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
-import { Text, useWindowDimensions, View } from 'react-native';
+import { ActivityIndicator, Text, useWindowDimensions, View } from 'react-native';
 
 
 
@@ -128,6 +128,21 @@ const MyAssignment = () => {
         router.push(APP_ROUTES.updateDeleteAsset);
     };
 
+    // Background reload (e.g. after a create / update / submit): the old list
+    // stays visible, so show that newer data is on its way. The first load
+    // uses the skeleton instead.
+    const isRefreshing = isFetching && !isLoading;
+    const refreshingIndicator = isRefreshing ? (
+        <View
+            className="flex-row items-center gap-2 self-start"
+            accessibilityRole="progressbar"
+            accessibilityLabel="Refreshing asset list"
+        >
+            <ActivityIndicator size="small" color="#2b7fff" />
+            <AppText variant="label" className="text-text-tertiary">Refreshing...</AppText>
+        </View>
+    ) : null;
+
     const addAssetButton = (
         <Button fullWidth onPress={handleCreateAsset}>
             <View className="flex-row items-center justify-center gap-2">
@@ -166,6 +181,7 @@ const MyAssignment = () => {
     if (!myAssignmentList?.length) {
         return (
             <View className="flex-1 items-center justify-center px-6">
+                {refreshingIndicator && <View className="mb-4">{refreshingIndicator}</View>}
                 <View className="mb-4 h-16 w-16 items-center justify-center rounded-2xl bg-slate-100 dark:bg-slate-800">
                     <AppIcon
                         family="MaterialCommunityIcons"
@@ -223,6 +239,7 @@ const MyAssignment = () => {
                             Total Asset :  <Text className='text-[#2b7fff] font-semibold'>{assignedAssetListData?.length}</Text>
                         </AppText>
                     </View>
+                    {refreshingIndicator && <View className='mt-2'>{refreshingIndicator}</View>}
                 </View>
 
 

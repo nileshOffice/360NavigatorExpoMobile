@@ -6,8 +6,6 @@ import AppBottomSheet from "@/src/common/components/ui/bottom_sheet";
 import Screen from "@/src/common/layouts/Screen";
 import { useAppDispatch, useAppSelector } from "@/src/lib/store/hooks";
 import { RootState } from "@/src/lib/store/store";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ActivityIndicator, Image, ScrollView, useWindowDimensions, View } from "react-native";
 import {
   useGetAssetUpdateFieldByClientsQuery,
   useGetClientClassStructureDataQuery,
@@ -16,7 +14,6 @@ import {
   useLazyGetMasterDataUpdateAssetInformationQuery,
   useSaveAssetWalkDownDetailsMutation,
   walkdownApi,
-  // useGetMasterDataUpdateAssetInformationQuery
 } from "@/src/main/modules/walkdown/api/walkdownApi";
 import AssetFormField from "@/src/main/modules/walkdown/components/AssetFormField";
 import {
@@ -26,6 +23,8 @@ import {
   categorySectionMap,
   initialAssetForm,
 } from "@/src/main/modules/walkdown/formConfig/formConfig";
+import { useCallback, useMemo, useState } from "react";
+import { ActivityIndicator, Image, ScrollView, useWindowDimensions, View } from "react-native";
 
 import AppDatePicker from "@/src/common/components/ui/AppDatePicker";
 import AppStepper from "@/src/common/components/ui/AppStepper";
@@ -41,15 +40,15 @@ import { useToast } from "@/src/common/components/ui/toast";
 import { APP_ROUTES } from "@/src/common/config/routes";
 import { useHeaderBackHandler, useScreenHeader } from "@/src/common/hooks/useScreenHeader";
 import { formatDateForStorage, parseStoredDate } from "@/src/lib/utils";
-import { buildAssetDataString } from "@/src/utils/assetPayload";
-import { buildLocationTree } from "@/src/utils/locationTreeUtils";
-import { router } from "expo-router";
 import AssetSelectionDrawer from "@/src/main/modules/walkdown/components/AssetSelectionDrawer";
 import CalculateAssetEcr from "@/src/main/modules/walkdown/components/CalculateAssetEcr";
 import {
   saveAssetForm as assetAssetFormAction,
   resetSaveAssetForm,
 } from "@/src/main/modules/walkdown/redux/walkDownSlice/assetFormSlice";
+import { buildAssetDataString } from "@/src/utils/assetPayload";
+import { buildLocationTree } from "@/src/utils/locationTreeUtils";
+import { router } from "expo-router";
 
 type AssetForm = typeof initialAssetForm;
 
@@ -191,6 +190,10 @@ const CreateNewAsset = () => {
     isLoading: isSavingAsset,
   },
 ] = useSaveAssetWalkDownDetailsMutation();
+
+  // True for the whole save (upload → save → link photos → refresh list), so
+  // the Save button keeps its spinner between the individual requests.
+  const [isSaveInProgress, setIsSaveInProgress] = useState(false);
 
 
   // ====================  Insert Images  ======================
@@ -1050,6 +1053,9 @@ const handleFieldPress = useCallback(
   // =========================================================
 
   const handleBack = useCallback(() => {
+    // Ignore back while saving: leaving mid-save hides the result.
+    if (isSaveInProgress) return;
+
     if (isReviewMode) {
       setIsReviewMode(false);
       return;
@@ -1065,7 +1071,7 @@ const handleFieldPress = useCallback(
     } else {
       router.replace(APP_ROUTES.assetAssignment);
     }
-  }, [currentStep, isReviewMode]);
+  }, [currentStep, isReviewMode, isSaveInProgress]);
 
   // Header back arrow + Android hardware back step through the wizard.
   useHeaderBackHandler(handleBack);
@@ -1089,7 +1095,8 @@ const handleFieldPress = useCallback(
   // ========================================================
      //  Add New Asset
 
-  const isSubmitting = isSavingAsset || isUploadingFiles || isUploadingImages;
+  const isSubmitting =
+    isSavingAsset || isUploadingFiles || isUploadingImages || isSaveInProgress;
 
   /**
    * Finds the id of the asset that was just saved, so photos are linked to
@@ -1168,6 +1175,7 @@ const handleFieldPress = useCallback(
     if (isSubmitting) return;
 
     setIsCreateAssetConfirmationVisible(false);
+    setIsSaveInProgress(true);
 
     const form = assetForm?.saveAssetForm;
 
@@ -1233,6 +1241,7 @@ const handleFieldPress = useCallback(
           message: `${getUploadErrorMessage(error)} The asset was not saved yet.`,
           duration: 6000,
         });
+        setIsSaveInProgress(false);
         return;
       }
     }
@@ -1248,6 +1257,7 @@ const handleFieldPress = useCallback(
         message: "Unable to save asset. Please try again.",
         duration: 5000,
       });
+      setIsSaveInProgress(false);
       return;
     }
 
@@ -1295,6 +1305,20 @@ const handleFieldPress = useCallback(
         message: "Your new asset has been added.",
         duration: 5000,
       });
+    }
+
+    // Reload the asset list BEFORE leaving, so My Assignment opens with the
+    // new asset instead of the old cached list.
+    try {
+      await dispatch(
+        walkdownApi.endpoints.getAssetListByActivityId.initiate(assetListArgs, {
+          forceRefetch: true,
+          subscribe: false,
+        }),
+      ).unwrap();
+    } catch (error) {
+      // Not fatal: My Assignment still refetches on its own.
+      if (__DEV__) console.warn("[CreateNewAsset] Asset list refresh failed:", error);
     }
 
     dispatch(resetSaveAssetForm());

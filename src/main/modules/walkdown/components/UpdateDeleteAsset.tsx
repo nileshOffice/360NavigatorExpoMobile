@@ -47,14 +47,20 @@ const UpdateDeleteAsset = () => {
 
     const {
         data: myAssetUpdateFields,
-        isLoading: isFieldsLoading,
+        fulfilledTimeStamp: fieldsLoadedAt,
         isError: isFieldsError,
         refetch: refetchFields,
-    } = useGetAssetUpdateFieldByClientsQuery(fieldApiDto, { skip: !assetId });
+    } = useGetAssetUpdateFieldByClientsQuery(fieldApiDto, {
+        skip: !assetId,
+        // Always load fresh values when the screen opens: the update save does
+        // not invalidate 'AssetFields', so the cache can hold pre-edit values.
+        refetchOnMountOrArgChange: true,
+    });
 
     const {
         data: uploadedImages,
-        isLoading: isImagesLoading,
+        fulfilledTimeStamp: imagesLoadedAt,
+        isError: isImagesError,
     } = useGetFileListByObjectIdQuery(
         {
             id: "A",
@@ -62,8 +68,16 @@ const UpdateDeleteAsset = () => {
             id22: 0,
             id23: Number(assetId ?? 0),
         },
-        { skip: !assetId },
+        { skip: !assetId, refetchOnMountOrArgChange: true },
     );
+
+    // Cached data from before this screen opened may be pre-edit values, so
+    // only data loaded after opening counts. Later reloads (e.g. during Submit)
+    // keep the screen as is instead of switching back to the loader.
+    const [openedAt] = useState(() => Date.now());
+    const hasFreshFields = (fieldsLoadedAt ?? 0) >= openedAt;
+    // A failed photo request must not keep the loader up forever.
+    const hasFreshImages = (imagesLoadedAt ?? 0) >= openedAt || isImagesError;
 
     /**
      * Builds the update form (fields + photos) for the selected asset in one
@@ -75,7 +89,7 @@ const UpdateDeleteAsset = () => {
      * also restores the form after "Discard changes" on the update screen.
      */
     const hydrateForm = useCallback(() => {
-        if (!assetId || !myAssetUpdateFields?.length || !uploadedImages) {
+        if (!assetId || !hasFreshFields || !myAssetUpdateFields?.length || !uploadedImages) {
             return;
         }
 
@@ -91,11 +105,13 @@ const UpdateDeleteAsset = () => {
         );
 
         dispatch(setUpdateAssetForm(mappedForm));
-    }, [assetId, myAssetUpdateFields, uploadedImages, dispatch]);
+    }, [assetId, hasFreshFields, myAssetUpdateFields, uploadedImages, dispatch]);
 
     useFocusEffect(hydrateForm);
 
-    const isPreparing = !!assetId && (isFieldsLoading || isImagesLoading);
+    // Wait for the fresh data (not just the first load), so stale cached
+    // values are never shown or copied into the update form.
+    const isPreparing = !!assetId && !isFieldsError && (!hasFreshFields || !hasFreshImages);
 
     // =========================================================
     // SUBMIT ASSET

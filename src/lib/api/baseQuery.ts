@@ -429,10 +429,16 @@ const refreshAccessToken = async (
       );
 
       if (decryptedRefreshResult.error) {
-        console.error(
-          "[Interceptor] Token refresh failed:",
-          decryptedRefreshResult.error,
-        );
+        // Expected when the session has expired: the caller shows the
+        // "Session Expired" alert and logs out. console.error raised the
+        // red LogBox screen in dev; also only the status is logged, as the
+        // error body may contain token data.
+        if (__DEV__) {
+          console.warn(
+            "[Interceptor] Token refresh failed:",
+            decryptedRefreshResult.error.status,
+          );
+        }
 
         return null;
       }
